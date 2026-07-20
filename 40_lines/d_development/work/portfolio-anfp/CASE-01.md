@@ -19,10 +19,10 @@ Derived evidence
 - 02_pipeline.md
 - 03_segmentation.md
 - 04_campaign-and-dashboard.md
+- 05_results.md
 
 Pending evidence
 
-- 05_results.md
 - 06_evidence-gaps.md
 
 Public artifact

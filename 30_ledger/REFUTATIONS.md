@@ -112,3 +112,30 @@ interna y este entorno.
 (este entorno la habría violado), o reafirmarla (entonces este entorno es su
 última excepción y el siguiente cierre debe ser Clase O).
 **Resultado:** *(pendiente)*
+
+## R-006 — ABIERTA · ciclo activado con refutaciones abiertas
+
+**Observado (2026-07-20):** se creó
+`40_lines/d_development/CURRENT.md` con estado `ACTIVE` mientras R-001–R-005
+continuaban abiertas.
+
+**Contrato afectado:** LAW §4 y el orden obligatorio de START.md.
+
+**Causa:** se siguió una instrucción conversacional que introdujo trabajo nuevo
+antes de resolver las refutaciones pendientes.
+
+**Resultado (2026-07-20):**
+
+La observación fue correcta.
+
+Sin embargo, reveló una ambigüedad en LAW §4 y no una violación
+permanente del contrato.
+
+El operador adoptó la Decisión B:
+
+- las refutaciones constitucionales bloquean cambios al OS;
+- las refutaciones operativas bloquean únicamente el trabajo afectado.
+
+Por ello R-006 queda absorbida por la modificación de LAW §4.
+
+**Estado:** CERRADA.

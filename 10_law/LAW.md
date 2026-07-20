@@ -62,12 +62,21 @@ declarar un ciclo de valor cerrado sin al menos un cierre Clase O.
 
 ## 4. Precedencia del trabajo
 
-Del algoritmo next-move, sin alteración:
+Antes de actuar, toda refutación abierta debe clasificarse como
+**constitucional** u **operativa**.
 
-1. ¿Refutación abierta en `30_ledger/REFUTATIONS.md`? → ese es el movimiento.
-2. Si no: primer objetivo sin ✓ de la línea activa.
-3. Si no está claro qué línea: la decisión es de alcance y pertenece al
-   operador por derecho.
+1. Si existe una refutación **operativa** que afecta al trabajo activo:
+   ese es el siguiente movimiento.
+
+2. Si existe una refutación **constitucional**:
+   bloquea únicamente cambios al Seed, Law, Derivation o arquitectura del OS.
+   No bloquea el trabajo operativo.
+
+3. Si no existen refutaciones operativas abiertas:
+   avanzar al primer objetivo sin ✓ de la línea activa.
+
+4. Si no está claro qué línea continúa:
+   la decisión es de alcance y pertenece al operador por derecho.
 
 ## 5. Vocabulario protegido
 

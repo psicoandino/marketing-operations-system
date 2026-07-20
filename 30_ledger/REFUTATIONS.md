@@ -18,6 +18,58 @@ de punta a punta.
 con el skill auditor del estrato externo.
 **Resultado:** *(pendiente)*
 
+### Independent audit — 2026-07-20
+
+Auditor: independent model
+Verdict: KEEP OPEN
+
+Verified:
+- D2 — dual ledger
+- D3 — closure classes and otherness gate
+- D6 — refutation precedence
+- D9 — plain-file material substrate
+- D10 — current document count and minimal form
+
+Refuted:
+- D4 — the Voice Balance Rule was promoted from model inference to law
+- D5 — distinct-auditor protection was not satisfied at birth
+
+Unsupported because external strata were not accessible:
+- D0 — numbering gap
+- D7 — frozen semantic families
+- D8 — external strata registry
+
+Contradictions:
+- model testimony became legislation in VOICES.md
+- the environment was created while the recorded moratorium remained unresolved
+
+Evidence:
+`30_ledger/evidence/R-001-independent-audit.md`
+
+Closure conditions:
+- resolve the epistemic status of the Voice Balance Rule;
+- permit or reject verification of the named external strata;
+- resolve R-005 concerning the moratorium;
+- repeat the independent audit after the contract changes.
+
+Operator decision:
+
+2026-07-20
+
+Decision B accepted.
+
+The Voice Balance Rule is removed from LAW and reclassified as an
+operational hypothesis inside CYCLE.md.
+
+Reason:
+
+Independent audit demonstrated insufficient authority to legislate it.
+
+Status:
+
+Applied.
+
+
 ## R-002 — ABIERTA · verify:rc2 en rojo en 000_psicoandino
 
 **Observado (2026-07-19):** `npm run verify:rc2` FALLA — un worktree residual

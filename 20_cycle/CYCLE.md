@@ -16,7 +16,11 @@ idea (≤5 líneas, sin solución)
 → refutación → ADR → corrección
 → cierre:  Clase M → DEPOSITS.md
            Clase O → VALUE_EVENTS.md
-→ las seis preguntas (VOICES.md) antes de declarar cerrado
+→ hipótesis operativa: intentar responder las seis preguntas de VOICES.md
+    Si esta práctica mejora sistemáticamente la calidad de los cierres,
+    podrá proponerse como futura ley.
+    Mientras no exista evidencia suficiente,
+    permanece como hipótesis operativa.
 ```
 
 Precedencia entre ciclos: LAW §4 (refutaciones primero, siempre).

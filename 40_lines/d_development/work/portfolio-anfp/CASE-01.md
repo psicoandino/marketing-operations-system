@@ -15,13 +15,13 @@ Canonical evidence
 
 Derived evidence
 
+- 01_context.md
+- 02_pipeline.md
 - 03_segmentation.md
 - 04_campaign-and-dashboard.md
 
 Pending evidence
 
-- 01_context.md
-- 02_pipeline.md
 - 05_results.md
 - 06_evidence-gaps.md
 

@@ -1,20 +1,21 @@
 #!/usr/bin/env node
 /**
- * Smoke test for the Dashboard View — Increment 4 (all four required views:
- * Lifecycle Status + Acquisition → Enrollment Trend + Origin + Program
- * Interest). Increments 1-3's checks are preserved verbatim below except
- * for the nav-count assertions that literally encoded "exactly 3 views
- * enabled" — those are updated to "exactly 4 enabled" because enabling the
- * Program Interest view is this increment's explicit purpose, not a
- * regression. Every other prior assertion, and every prior view's rendered
- * behavior, is unchanged. EN | ES / localStorage language persistence is
- * explicitly out of scope for this increment (deferred to Increment 5) and
- * is left untouched — no assertion is added or removed about its absence.
+ * Smoke test for the Dashboard View — Increment 5 (EN | ES language parity
+ * and localStorage persistence across all four views). Increments 1-4's
+ * checks are preserved verbatim below except for a handful of assertions
+ * that had to be generalized solely because user-facing text is now
+ * rendered dynamically from a translation dictionary instead of hardcoded
+ * in the static HTML: the four `<th>` header regexes gained an `[^>]*` to
+ * tolerate the `id` attributes now needed for translation targeting, and
+ * the old "no i18n dictionary exists" check is replaced by "exactly one
+ * i18n dictionary exists" (the same pattern already used for
+ * DashboardCore). No functional assertion about Lifecycle, Trend, Origin,
+ * or Program Interest was weakened or removed.
  *
  * Verifies, mechanically, against DASHBOARD_BUILD_CONTRACT.md:
  *   - required files exist, no external runtime dependencies, no network calls;
  *   - embedded CSVs match the input/*.csv fixtures exactly;
- *   - the nav scaffolds exactly 4 views, all 4 enabled this increment;
+ *   - the nav scaffolds exactly 4 views, all 4 enabled;
  *   - the synthetic-data + historical-anomalies disclosure is present;
  *   - Estado de consulta has exactly the 8 contract-specified values;
  *   - status counts reconcile exactly to Leads (no forced/hidden equality);
@@ -39,7 +40,17 @@
  *   - [Increment 4] every código maps to exactly one programa, and every
  *     programa to exactly one área;
  *   - [Increment 4] no duplicated filtering/aggregation logic was
- *     introduced for the new view.
+ *     introduced for the new view;
+ *   - [Increment 5] EN | ES controls exist and English is the deterministic
+ *     default;
+ *   - [Increment 5] localStorage persistence is wired;
+ *   - [Increment 5] exactly one centralized translation dictionary exists,
+ *     evaluates in Node, and has identical, non-empty EN/ES key sets;
+ *   - [Increment 5] Spanish prose is genuinely translated, not copied;
+ *   - [Increment 5] all four nav labels and each view's key labels differ
+ *     between EN and ES;
+ *   - [Increment 5] DashboardCore's computations have zero dependency on
+ *     language state (language switching cannot alter totals).
  *
  * Run: node tests/smoke-test.mjs   (no dependencies beyond Node >= 16)
  */
@@ -150,7 +161,7 @@ check("view-trend starts hidden in the static markup", /id="view-trend" hidden/.
 check("Trend nav button is enabled (no disabled attribute)",
   /<button data-view="trend">/.test(html));
 check("Trend table has Date/Leads/Matrículas columns",
-  /<th>Date<\/th>/.test(html) && />Leads<\/th>/.test(html) && />Matrículas<\/th>/.test(html));
+  /<th[^>]*>Date<\/th>/.test(html) && />Leads<\/th>/.test(html) && />Matrículas<\/th>/.test(html));
 check("Trend view has a reconciliation note element", /id="trendReconcileNote"/.test(html));
 
 // ---------- [Increment 3] Origin view markup ----------
@@ -161,7 +172,7 @@ check("view-origin starts hidden in the static markup", /id="view-origin" hidden
 check("Origin nav button is enabled (no disabled attribute)",
   /<button data-view="origin">/.test(html));
 check("Canal table present with Canal/Leads columns",
-  /id="canalBody"/.test(html) && /<th>Canal<\/th>/.test(html));
+  /id="canalBody"/.test(html) && /<th[^>]*>Canal<\/th>/.test(html));
 check("Formulario/Origen table present with Formulario / Origen, Canal, Leads columns",
   /id="originBody"/.test(html) && /Formulario \/ Origen/.test(html));
 check("Origin view has a reconciliation note element", /id="originReconcileNote"/.test(html));
@@ -178,9 +189,9 @@ check("Program Interest nav button is enabled (no disabled attribute)",
   /<button data-view="program">/.test(html));
 check("no nav button remains disabled (all 4 views implemented)",
   !/<button disabled/.test(html));
-check("Área table present", /id="areaBody"/.test(html) && /<th>Área<\/th>/.test(html));
-check("Programa table present", /id="programaBody"/.test(html) && /<th>Programa<\/th>/.test(html));
-check("Código table present", /id="codigoBody"/.test(html) && /<th>Código<\/th>/.test(html));
+check("Área table present", /id="areaBody"/.test(html) && /<th[^>]*>Área<\/th>/.test(html));
+check("Programa table present", /id="programaBody"/.test(html) && /<th[^>]*>Programa<\/th>/.test(html));
+check("Código table present", /id="codigoBody"/.test(html) && /<th[^>]*>Código<\/th>/.test(html));
 check("Program Interest view has a reconciliation note element", /id="programReconcileNote"/.test(html));
 check("Área/Programa disclosed as a synthetic, documented hierarchy",
   /Área\/Programa are a synthetic, documented hierarchy/i.test(html));
@@ -411,8 +422,85 @@ if (Core) {
     countOccurrences(html, /const DashboardCore = \(function/g) === 1);
   check("only one nav click handler wired (no duplicated navigation infrastructure)",
     countOccurrences(html, /getElementById\("viewNav"\)\.addEventListener\("click"/g) === 1);
-  check("no i18n/translation dictionary exists to duplicate (out of this contract's scope)",
-    !/I18N|translations\s*=|data-i18n/i.test(html));
+  check("exactly one i18n translation dictionary defined (no duplicated translation system)",
+    countOccurrences(html, /const I18N = \{/g) === 1);
+  check("DashboardCore's shipped source has zero dependency on language state (totals cannot depend on LANG)",
+    !/\bI18N\b/.test(coreSource) && !/\bLANG\b/.test(coreSource) && !/\bt\(/.test(coreSource));
+
+  section("Language switch controls & persistence (Increment 5)");
+  check("EN language button exists", /id="langEn"/.test(html));
+  check("ES language button exists", /id="langEs"/.test(html));
+  check("English is the deterministic default (no stored preference = 'en')",
+    /stored === "es" \? "es" : "en"/.test(html));
+  check("localStorage.getItem is used to read the persisted language",
+    /localStorage\.getItem\(LANG_KEY\)/.test(html));
+  check("localStorage.setItem is used to persist the selected language",
+    /localStorage\.setItem\(LANG_KEY/.test(html));
+  check("switching language does not touch filter/nav/pagination state (setLang only re-renders chrome + data)",
+    (function () {
+      const m = html.match(/function setLang\(l\) \{([\s\S]*?)\n  \}/);
+      if (!m) return false;
+      const body = m[1];
+      return /renderChrome\(\)/.test(body) && /renderAll\(\)/.test(body) &&
+        !/filterPrograma["'\.]/.test(body) && !/filterStart/.test(body) && !/filterEnd/.test(body);
+    })());
+
+  section("Translation dictionary integrity (Increment 5)");
+  const I18N_START = "/* __I18N_DICT_START__ */";
+  const I18N_END = "/* __I18N_DICT_END__ */";
+  const i18nSi = html.indexOf(I18N_START), i18nEi = html.indexOf(I18N_END);
+  check("i18n dictionary markers present", i18nSi !== -1 && i18nEi !== -1 && i18nEi > i18nSi);
+  let I18N = null;
+  if (i18nSi !== -1 && i18nEi !== -1) {
+    try {
+      const dictCode = html.slice(i18nSi + I18N_START.length, i18nEi);
+      I18N = vm.runInNewContext(dictCode + "\nI18N", {}, { timeout: 5000 });
+      check("i18n dictionary evaluates in Node", true);
+    } catch (e) {
+      check("i18n dictionary evaluates in Node", false, String(e));
+    }
+  }
+  if (I18N) {
+    check("dictionary has both en and es", !!I18N.en && !!I18N.es);
+    if (I18N.en && I18N.es) {
+      const enKeys = Object.keys(I18N.en).sort();
+      const esKeys = Object.keys(I18N.es).sort();
+      check("en/es dictionaries have identical key sets",
+        JSON.stringify(enKeys) === JSON.stringify(esKeys),
+        `en-only: ${enKeys.filter((k) => !esKeys.includes(k)).join(",")} | es-only: ${esKeys.filter((k) => !enKeys.includes(k)).join(",")}`);
+      const emptyEn = enKeys.filter((k) => !String(I18N.en[k]).trim());
+      const emptyEs = esKeys.filter((k) => !String(I18N.es[k] ?? "").trim());
+      check("no empty English translation values", emptyEn.length === 0, emptyEn.join(","));
+      check("no empty Spanish translation values", emptyEs.length === 0, emptyEs.join(","));
+
+      // A handful of short cognates/loanwords are legitimately identical
+      // across languages (Leads, Canal, Área, Total, formula notation).
+      // Genuine prose keys must differ.
+      const allowedIdentical = new Set([
+        "statLeadsLabel", "statMatriculasLabel", "statConversionFormula",
+        "thLeadsCol", "thMatriculasCol", "totalLabel", "canalHeading", "thCanal",
+        "thCanalCol", "formularioHeading", "thFormularioOrigen", "areaHeading",
+        "programaHeading", "thArea", "thPrograma", "codigoHeading", "thCodigo",
+        "tagTerminalWord", "tagReversibleWord"
+      ]);
+      const proseKeys = enKeys.filter((k) => !allowedIdentical.has(k));
+      const identicalProse = proseKeys.filter((k) => I18N.en[k] === I18N.es[k]);
+      check("Spanish prose is genuinely translated, not copied from English",
+        identicalProse.length === 0, identicalProse.join(","));
+
+      check("all 4 nav labels differ between EN and ES",
+        ["navLifecycle", "navTrend", "navOrigin", "navProgram"].every((k) => I18N.en[k] !== I18N.es[k]));
+      check("Lifecycle Status view: title differs between EN and ES", I18N.en.lifecycleTitle !== I18N.es.lifecycleTitle);
+      check("Trend view: title differs between EN and ES", I18N.en.trendTitle !== I18N.es.trendTitle);
+      check("Origin view: title differs between EN and ES", I18N.en.originTitle !== I18N.es.originTitle);
+      check("Program Interest view: title differs between EN and ES", I18N.en.programTitle !== I18N.es.programTitle);
+      check("filter labels differ between EN and ES",
+        ["filterProgramLabel", "filterFromLabel", "filterToLabel"].every((k) => I18N.en[k] !== I18N.es[k]));
+      check("reconciliation-note templates differ between EN and ES",
+        ["lifecycleReconcile", "trendReconcile", "originReconcile", "programReconcile"]
+          .every((k) => I18N.en[k] !== I18N.es[k]));
+    }
+  }
 }
 
 // ---------- summary ----------

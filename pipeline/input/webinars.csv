@@ -1,0 +1,13 @@
+webinar_file,createdAt,email,firstName,lastName,phone,Institución,Empresa,Cargo,Cargo en la Institución,"Evento Híbrido, indica tu modalidad de asistencia:      ","Acepto recibir información adicional de programas y eventos","Deseo ser parte de la Red Uejecutivos y suscribirme al Newsletter"
+143.csv,2025-03-02T18:45:12Z,ana.riquelme@example.org,Ana,Riquelme,+56 9 6111 2233,Universidad Ficticia Central,,Analista de Gestión,,Online,Sí,Sí
+143.csv,2025-03-02T19:02:47Z,camila.ortega@example.com,Camila,Ortega,+56 9 7222 3344,,Comercial Andina SpA,,Jefa de Ventas,Presencial,si,No
+143.csv,2025-03-03T08:11:30Z,camila.ortega@example.com,Camila,Ortega,,Comercial Andina SpA,,,,Online,1,
+143.csv,2025-03-03T10:27:55Z,diego.fritz@example.net,Diego,Fritz,+56 9 7333 4455,,Logística Austral Ltda,,Coordinador de Operaciones,Online,Sí,Sí
+143.csv,2025-03-04T09:16:08Z,javiera.pena@example.org,Javiera,Peña,,Municipalidad Ficticia de Los Ríos,,Encargada de Presupuesto,,Presencial,No,No
+143.csv,2025-03-04T21:39:44Z,,Sebastián,Lara,+56 9 7444 5566,,,,,Online,Sí,
+144.csv,2025-03-06T12:05:19Z,jorge.salinas@example.net,Jorge,Salinas,+56 9 7555 6677,,Banco Ficticio del Sur,,Analista de Riesgo,Online,TRUE,Sí
+144.csv,2025-03-06T13:48:02Z,pablo.contreras@example.com,Pablo,Contreras,+56 9 6233 4455,Constructora Vega y Cía,,Jefe de Proyectos,,Online,Sí,No
+144.csv,2025-03-07T08:59:37Z,loreto.miranda@example.com,Loreto,Miranda,,,Clínica Ficticia Andes,,Subgerenta de Finanzas,Presencial,si,Sí
+144.csv,2025-03-07T15:22:10Z,cristian.donoso@example.net,Cristián,Donoso,+56 9 7666 7788,Universidad Ficticia Central,,Profesor Adjunto,,Online,1,1
+144.csv,2025-03-08T10:34:51Z,fernanda.leon@example.org,Fernanda,León,,,Agroexportadora Valle Alto,,Analista Comercial,Online,Sí,
+144.csv,2025-03-08T19:07:26Z,matias.roco@example.com,Matías,Roco,+56 9 7777 8899,,,,,,No,No

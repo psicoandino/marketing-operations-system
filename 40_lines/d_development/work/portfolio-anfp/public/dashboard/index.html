@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-motif-owner="header">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Marketing Operations Dashboard — Ricardo Moreno</title>
+<title>Marketing Operations Dashboard</title>
 <style>
 :root{
   --bg:#f5f3ec; --ink:#000; --muted:#5d625f; --line:#d8d4ca; --panel:#fff;
@@ -57,29 +57,26 @@ footer{margin-top:28px;color:var(--muted);font-size:.83rem;line-height:1.6}
 .lang-btn{border:0;background:transparent;border-radius:999px;padding:5px 13px;font-size:.78rem;font-weight:700;cursor:pointer;color:var(--muted);font-family:inherit}
 .lang-btn.active{background:var(--ink);color:#fff}
 </style>
+<link rel="stylesheet" href="../shell/psico-header/psico-header.css">
+<link rel="stylesheet" href="../shell/public-shell.css">
 </head>
 <body>
 
-<a href="../index.html"
-   aria-label="Return to portfolio"
-   style="position:fixed;top:12px;left:12px;z-index:9999;
-          padding:8px 12px;border:1px solid currentColor;border-radius:999px;
-          background:#fff;color:#111;text-decoration:none;
-          font:600 13px/1 system-ui,sans-serif">
-  ← Portfolio
-</a>
+<psico-header data-shell-current="dashboard" data-shell-root="../" data-shell-lang-key="dashboard_lang" data-shell-lang-default="en">
+  <header class="psico-header-fallback"><a class="psico-header-fallback__brand" href="../index.html">PSICOANDINO</a><nav aria-label="Primary navigation"><a href="../index.html">Home</a><a href="../case-study/index.html">Case Study</a><a href="../pipeline/index.html">Pipeline</a><a href="../dashboard/index.html" aria-current="page">Dashboard</a><a href="../cv/index.html">CV</a></nav></header>
+</psico-header>
 
 <main>
 <header>
   <div class="header-row">
-    <div class="kicker" id="kicker">Marketing Operations System · Dashboard View · Increment 5</div>
+    <div class="kicker" id="kicker">Marketing Operations System · Dashboard View</div>
     <div class="lang-switch" role="group" aria-label="Language / Idioma">
       <button class="lang-btn" id="langEn" data-lang="en">EN</button>
       <button class="lang-btn" id="langEs" data-lang="es">ES</button>
     </div>
   </div>
   <h1 id="mainTitle">Prospect Lifecycle — Marketing Operations Dashboard</h1>
-  <p id="subtitle">How does a prospect evolve through the operational system? This is the primary question this dashboard answers, before any aggregate marketing-operations question. This increment implements all four required views: Lifecycle Status, Acquisition → Enrollment Trend, Origin, and Program Interest.</p>
+  <p id="subtitle">How does a prospect evolve through the operational system? This is the primary question this dashboard answers, before any aggregate marketing-operations question. It implements all four required views: Lifecycle Status, Acquisition → Enrollment Trend, Origin, and Program Interest.</p>
   <div class="disclosure" id="disclosureBox">
     <strong id="disclosureStrong">All data on this page is synthetic.</strong>
     <span id="disclosureRest"></span>
@@ -178,7 +175,7 @@ footer{margin-top:28px;color:var(--muted);font-size:.83rem;line-height:1.6}
 
 <footer>
   <span id="footerText"></span> <code>SYSTEM_CONTRACT_PROPOSAL.md</code>, <code>DASHBOARD_CONTRACT_PROPOSAL.md</code>, <code>DASHBOARD_BUILD_CONTRACT.md</code>.
-  <span class="badge" id="badgeIncrement">Increment 5 of the Dashboard View</span> <span class="badge" id="badgeViews">Lifecycle Status + Acquisition → Enrollment Trend + Origin + Program Interest</span>
+  <span class="badge" id="badgeIncrement">Dashboard View</span> <span class="badge" id="badgeViews">Lifecycle Status + Acquisition → Enrollment Trend + Origin + Program Interest</span>
 </footer>
 </main>
 
@@ -254,7 +251,7 @@ DTD25-2,Diploma en Transformación Digital,Tecnología y Datos
    canonical-information-model.md (Consulta, Matrícula, Estado de consulta,
    Canal/Origen) at the scope required by DASHBOARD_BUILD_CONTRACT.md.
    Shared, single data model for every view (Lifecycle Status, Acquisition →
-   Enrollment Trend, and later increments) — no duplicated parsing, filtering
+   Enrollment Trend, and later views) — no duplicated parsing, filtering
    or ratio logic per view. Synthetic data — no external source, no network
    access. */
 const DashboardCore = (function () {
@@ -449,9 +446,9 @@ const DashboardCore = (function () {
    DASHBOARD_BUILD_CONTRACT.md. */
 const I18N = {
 en: {
-  kicker: "Marketing Operations System · Dashboard View · Increment 5",
+  kicker: "Marketing Operations System · Dashboard View",
   mainTitle: "Prospect Lifecycle — Marketing Operations Dashboard",
-  subtitle: "How does a prospect evolve through the operational system? This is the primary question this dashboard answers, before any aggregate marketing-operations question. This increment implements all four required views: Lifecycle Status, Acquisition → Enrollment Trend, Origin, and Program Interest.",
+  subtitle: "How does a prospect evolve through the operational system? This is the primary question this dashboard answers, before any aggregate marketing-operations question. It implements all four required views: Lifecycle Status, Acquisition → Enrollment Trend, Origin, and Program Interest.",
   disclosureStrong: "All data on this page is synthetic.",
   disclosureRest: "The historical system this reconstructs (documented in {{audit}}) had five specific, unresolved data anomalies: a mismatch between total leads and the sum of status counts, an unreconciled conversion percentage, a negative channel count, person names leaking into a source field, and an unconfirmed channel-grouping rule. Those anomalies are described in the project's evidence documents, not reproduced here — the numbers on this page are deliberately clean and internally consistent, per {{contract}}. The \"Canal\" grouping shown here follows an explicit synthetic mapping table (visible in {{canalcsv}}), not the historical, unconfirmed production rule.",
   navLifecycle: "Lifecycle Status",
@@ -500,13 +497,13 @@ en: {
   thCodigo: "Código",
   programReconcile: "Área total ({{areaSum}}), Programa total ({{programaSum}}) and Código total ({{codigoSum}}) all equal Leads ({{leads}}) for the current filter — reconciled by construction: every código maps to exactly one programa, and every programa to exactly one área ({{programacsv}}), per {{contract}}.",
   footerText: "Reconstructed reference implementation — the second public view of the Marketing Operations System.",
-  badgeIncrement: "Increment 5 of the Dashboard View",
+  badgeIncrement: "Dashboard View",
   badgeViews: "Lifecycle Status + Acquisition → Enrollment Trend + Origin + Program Interest"
 },
 es: {
-  kicker: "Sistema de Operaciones de Marketing · Vista de Dashboard · Incremento 5",
+  kicker: "Sistema de Operaciones de Marketing · Vista de Dashboard",
   mainTitle: "Ciclo de Vida del Prospecto — Dashboard de Operaciones de Marketing",
-  subtitle: "¿Cómo evoluciona un prospecto a través del sistema operacional? Esta es la pregunta principal que responde este dashboard, antes que cualquier pregunta agregada sobre operaciones de marketing. Este incremento implementa las cuatro vistas requeridas: Estado del Ciclo de Vida, Tendencia de Adquisición → Matrícula, Origen, e Interés por Programa.",
+  subtitle: "¿Cómo evoluciona un prospecto a través del sistema operacional? Esta es la pregunta principal que responde este dashboard, antes que cualquier pregunta agregada sobre operaciones de marketing. Implementa las cuatro vistas requeridas: Estado del Ciclo de Vida, Tendencia de Adquisición → Matrícula, Origen, e Interés por Programa.",
   disclosureStrong: "Todos los datos de esta página son sintéticos.",
   disclosureRest: "El sistema histórico que esta página reconstruye (documentado en {{audit}}) presentaba cinco anomalías de datos específicas y no resueltas: un desajuste entre el total de leads y la suma de los conteos por estado, un porcentaje de conversión no reconciliado, un conteo de canal negativo, nombres de personas filtrados en un campo de origen, y una regla de agrupación de canal no confirmada. Esas anomalías están descritas en los documentos de evidencia del proyecto, no reproducidas aquí — las cifras de esta página son deliberadamente limpias e internamente consistentes, según {{contract}}. La agrupación \"Canal\" que se muestra aquí sigue una tabla de mapeo sintético explícita (visible en {{canalcsv}}), no la regla de producción histórica sin confirmar.",
   navLifecycle: "Estado del Ciclo de Vida",
@@ -555,7 +552,7 @@ es: {
   thCodigo: "Código",
   programReconcile: "El total de Área ({{areaSum}}), el total de Programa ({{programaSum}}) y el total de Código ({{codigoSum}}) son iguales a Leads ({{leads}}) para el filtro actual — reconciliado por construcción: cada código se mapea a exactamente un programa, y cada programa a exactamente una área ({{programacsv}}), según {{contract}}.",
   footerText: "Implementación de referencia reconstruida — la segunda vista pública del Sistema de Operaciones de Marketing.",
-  badgeIncrement: "Incremento 5 de la Vista de Dashboard",
+  badgeIncrement: "Vista de Dashboard",
   badgeViews: "Estado del Ciclo de Vida + Tendencia de Adquisición → Matrícula + Origen + Interés por Programa"
 }
 };
@@ -710,7 +707,7 @@ es: {
     };
   }
 
-  // Unchanged from Increment 1: same computation, same DOM ids, same
+  // Unchanged from the initial Lifecycle view: same computation, same DOM ids, same
   // reconciliation note. Only the function name changed (render ->
   // renderLifecycle) so it can be called alongside renderTrend().
   function renderLifecycle() {
@@ -751,7 +748,7 @@ es: {
     return { leads: leads, mats: mats, conv: conv };
   }
 
-  // Increment 2: same filtered arrays as renderLifecycle, same
+  // Trend view: same filtered arrays as renderLifecycle, same
   // DashboardCore.leadsCount/matriculasCount/conversionRatio — grouped by
   // day instead of by status. No separate data model, no separate filter
   // logic, no separate conversion formula.
@@ -784,10 +781,10 @@ es: {
     });
   }
 
-  // Increment 3: same filtered `consultas` as renderLifecycle/renderTrend,
+  // Origin view: same filtered `consultas` as renderLifecycle/renderTrend,
   // rolled up via the existing DashboardCore.canalCounts (already used by
   // no other view before now, but not new logic — it shipped in
-  // Increment 1's core, unused by any renderer until this one). No
+  // the initial core, unused by any renderer until this one). No
   // separate filter pass, no separate Canal-derivation rule: canalMap
   // comes from the same input/canal_mapping.csv parsed once at load.
   function renderOrigin(lifecycleTotals) {
@@ -832,7 +829,7 @@ es: {
     });
   }
 
-  // Increment 4: same filtered `consultas` as every other view, rolled up
+  // Program Interest view: same filtered `consultas` as every other view, rolled up
   // via DashboardCore.programaCounts (same shape as canalCounts). No
   // separate filter pass, no separate hierarchy rule: programaMap comes
   // from the same input/programa_mapping.csv parsed once at load, so a
@@ -915,5 +912,6 @@ es: {
   renderAll();
 })();
 </script>
+<script src="../shell/psico-shell.js" defer></script>
 </body>
 </html>

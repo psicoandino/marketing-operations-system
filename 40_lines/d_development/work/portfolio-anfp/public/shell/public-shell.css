@@ -1,0 +1,19 @@
+/*
+ * Public portfolio shell — restrained Psicoandino identity integration.
+ * Loaded after the canonical psico-header.css; overrides only what the
+ * public portfolio requires: the header sits in normal document flow
+ * (never sticky/fixed) and disappears when the visitor prints a page.
+ */
+psico-header{position:static;z-index:auto}
+
+@media print{
+  psico-header{display:none}
+}
+
+/* The public CV keeps its private print-first layout; on screen it only
+   gains breathing room so text never touches the viewport edge. */
+body.cv-public .container{padding:28px 20px 64px}
+
+@media print{
+  body.cv-public .container{padding:0}
+}

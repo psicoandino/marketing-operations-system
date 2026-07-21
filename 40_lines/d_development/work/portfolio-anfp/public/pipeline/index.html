@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-motif-owner="header">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -89,17 +89,14 @@ footer{margin-top:28px;color:var(--muted);font-size:.83rem;line-height:1.6}
 .lang-btn{border:0;background:transparent;border-radius:999px;padding:5px 13px;font-size:.78rem;font-weight:700;cursor:pointer;color:var(--muted);font-family:inherit}
 .lang-btn.active{background:var(--ink);color:#fff}
 </style>
+<link rel="stylesheet" href="../shell/psico-header/psico-header.css">
+<link rel="stylesheet" href="../shell/public-shell.css">
 </head>
 <body>
 
-<a href="../index.html"
-   aria-label="Return to portfolio"
-   style="position:fixed;top:12px;left:12px;z-index:9999;
-          padding:8px 12px;border:1px solid currentColor;border-radius:999px;
-          background:#fff;color:#111;text-decoration:none;
-          font:600 13px/1 system-ui,sans-serif">
-  ← Portfolio
-</a>
+<psico-header data-shell-current="pipeline" data-shell-root="../" data-shell-lang-key="anfp_pipeline_lang" data-shell-lang-default="en">
+  <header class="psico-header-fallback"><a class="psico-header-fallback__brand" href="../index.html">PSICOANDINO</a><nav aria-label="Primary navigation"><a href="../index.html">Home</a><a href="../case-study/index.html">Case Study</a><a href="../pipeline/index.html" aria-current="page">Pipeline</a><a href="../dashboard/index.html">Dashboard</a><a href="../cv/index.html">CV</a></nav></header>
+</psico-header>
 
 <main>
 <header>
@@ -1382,5 +1379,6 @@ es: {
   show(0);
 })();
 </script>
+<script src="../shell/psico-shell.js" defer></script>
 </body>
 </html>

@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Marketing Operations Dashboard — Increment 3</title>
+<title>Marketing Operations Dashboard — Increment 4</title>
 <style>
 :root{
   --bg:#f5f3ec; --ink:#000; --muted:#5d625f; --line:#d8d4ca; --panel:#fff;
@@ -57,9 +57,9 @@ footer{margin-top:28px;color:var(--muted);font-size:.83rem;line-height:1.6}
 <body>
 <main>
 <header>
-  <div class="kicker">Marketing Operations System · Dashboard View · Increment 3</div>
+  <div class="kicker">Marketing Operations System · Dashboard View · Increment 4</div>
   <h1>Prospect Lifecycle — Marketing Operations Dashboard</h1>
-  <p>How does a prospect evolve through the operational system? This is the primary question this dashboard answers, before any aggregate marketing-operations question. This increment implements the Lifecycle Status view, the Acquisition → Enrollment Trend view, and the Origin view; the remaining required view (Program Interest) is scaffolded below and arrives in a later increment.</p>
+  <p>How does a prospect evolve through the operational system? This is the primary question this dashboard answers, before any aggregate marketing-operations question. This increment implements all four required views: Lifecycle Status, Acquisition → Enrollment Trend, Origin, and Program Interest.</p>
   <div class="disclosure">
     <strong>All data on this page is synthetic.</strong>
     The historical system this reconstructs (documented in <code>dashboard-audit.md</code>) had five specific, unresolved data anomalies: a mismatch between total leads and the sum of status counts, an unreconciled conversion percentage, a negative channel count, person names leaking into a source field, and an unconfirmed channel-grouping rule. Those anomalies are described in the project's evidence documents, not reproduced here — the numbers on this page are deliberately clean and internally consistent, per <code>DASHBOARD_BUILD_CONTRACT.md</code>. The "Canal" grouping shown here follows an explicit synthetic mapping table (visible in <code>input/canal_mapping.csv</code>), not the historical, unconfirmed production rule.
@@ -70,7 +70,7 @@ footer{margin-top:28px;color:var(--muted);font-size:.83rem;line-height:1.6}
   <button class="active" data-view="lifecycle">Lifecycle Status</button>
   <button data-view="trend">Acquisition → Enrollment Trend</button>
   <button data-view="origin">Origin</button>
-  <button disabled data-view="program">Program Interest<span class="pending">later increment</span></button>
+  <button data-view="program">Program Interest</button>
 </nav>
 
 <div class="filters">
@@ -131,8 +131,33 @@ footer{margin-top:28px;color:var(--muted);font-size:.83rem;line-height:1.6}
   <p class="note" id="originReconcileNote"></p>
 </section>
 
+<section class="card" id="view-program" hidden>
+  <h2>Program Interest</h2>
+  <p class="note">Demand for programs, for the current filter — at the Área, Programa and Versión/Código levels of the confirmed program hierarchy. Same Consulta records as the other three views, grouped by what a prospect is interested in instead of by status, date, or acquisition source.</p>
+  <p class="note"><strong>Área/Programa are a synthetic, documented hierarchy</strong> (see <code>input/programa_mapping.csv</code>) built on top of the same <code>programa_codigo</code> values used everywhere else in this dashboard — not a reproduction of any historical catalog.</p>
+  <h3>Área</h3>
+  <table class="trend-table">
+    <thead><tr><th>Área</th><th class="num">Leads</th></tr></thead>
+    <tbody id="areaBody"></tbody>
+    <tfoot><tr class="totals"><td>Total</td><td class="num" id="areaTotal">0</td></tr></tfoot>
+  </table>
+  <h3>Programa</h3>
+  <table class="trend-table">
+    <thead><tr><th>Programa</th><th>Área</th><th class="num">Leads</th></tr></thead>
+    <tbody id="programaBody"></tbody>
+    <tfoot><tr class="totals"><td>Total</td><td></td><td class="num" id="programaTotal">0</td></tr></tfoot>
+  </table>
+  <h3>Versión / Código</h3>
+  <table class="trend-table">
+    <thead><tr><th>Código</th><th>Programa</th><th class="num">Leads</th></tr></thead>
+    <tbody id="codigoBody"></tbody>
+    <tfoot><tr class="totals"><td>Total</td><td></td><td class="num" id="codigoTotal">0</td></tr></tfoot>
+  </table>
+  <p class="note" id="programReconcileNote"></p>
+</section>
+
 <footer>
-  Reconstructed reference implementation — the second public view of the Marketing Operations System (<code>SYSTEM_CONTRACT_PROPOSAL.md</code>, <code>DASHBOARD_CONTRACT_PROPOSAL.md</code>, <code>DASHBOARD_BUILD_CONTRACT.md</code>). Not the historical production system. Processing occurs locally in the browser. <span class="badge">Increment 3 of the Dashboard View</span> <span class="badge">Lifecycle Status + Acquisition → Enrollment Trend + Origin</span>
+  Reconstructed reference implementation — the second public view of the Marketing Operations System (<code>SYSTEM_CONTRACT_PROPOSAL.md</code>, <code>DASHBOARD_CONTRACT_PROPOSAL.md</code>, <code>DASHBOARD_BUILD_CONTRACT.md</code>). Not the historical production system. Processing occurs locally in the browser. <span class="badge">Increment 4 of the Dashboard View</span> <span class="badge">Lifecycle Status + Acquisition → Enrollment Trend + Origin + Program Interest</span>
 </footer>
 </main>
 
@@ -185,6 +210,21 @@ sem_meta,Digital Ads
 admision_directa,Admisión Directa
 contacto_directo,Admisión Directa
 referido_interno,Referidos
+</script>
+<script type="text/csv" id="csv-programa">
+programa_codigo,programa_nombre,area
+DCG25-1,Diploma en Control de Gestión,Gestión y Control
+DCG25-2,Diploma en Control de Gestión,Gestión y Control
+DGO25-1,Diploma en Gestión de Operaciones,Gestión y Control
+DGO25-2,Diploma en Gestión de Operaciones,Gestión y Control
+DFC25-1,Diploma en Finanzas Corporativas,Finanzas y Tributación
+DFC25-2,Diploma en Finanzas Corporativas,Finanzas y Tributación
+DTA25-1,Diploma en Tributación Aplicada,Finanzas y Tributación
+DTA25-2,Diploma en Tributación Aplicada,Finanzas y Tributación
+DAD25-1,Diploma en Analítica de Datos,Tecnología y Datos
+DAD25-2,Diploma en Analítica de Datos,Tecnología y Datos
+DTD25-1,Diploma en Transformación Digital,Tecnología y Datos
+DTD25-2,Diploma en Transformación Digital,Tecnología y Datos
 </script>
 
 <script>
@@ -327,6 +367,37 @@ const DashboardCore = (function () {
     return Object.keys(days).sort().map(function (k) { return days[k]; });
   }
 
+  function buildProgramaMap(programaRows) {
+    const map = {};
+    programaRows.forEach(function (r) {
+      map[r.programa_codigo] = { programa: r.programa_nombre, area: r.area };
+    });
+    return map;
+  }
+
+  // Área → Programa → Código rollup, using the explicit synthetic mapping
+  // table only — same pattern as canalCounts. `consultas` is already keyed
+  // by programa_codigo (the same field the global filter and every other
+  // view use), so byCodigo needs no new grouping key; byPrograma/byArea
+  // roll it up via programaMap. Every distinct code in `consultas` must
+  // have a mapping entry (validated by the smoke test).
+  function programaCounts(consultas, programaMap) {
+    const byCodigo = {};
+    consultas.forEach(function (r) {
+      byCodigo[r.programa_codigo] = (byCodigo[r.programa_codigo] || 0) + 1;
+    });
+    const byPrograma = {};
+    const byArea = {};
+    Object.keys(byCodigo).forEach(function (codigo) {
+      const info = programaMap[codigo];
+      const n = byCodigo[codigo];
+      if (!info) return;
+      byPrograma[info.programa] = (byPrograma[info.programa] || 0) + n;
+      byArea[info.area] = (byArea[info.area] || 0) + n;
+    });
+    return { byCodigo: byCodigo, byPrograma: byPrograma, byArea: byArea };
+  }
+
   return {
     ESTADOS: ESTADOS,
     parseCsv: parseCsv,
@@ -339,7 +410,9 @@ const DashboardCore = (function () {
     distinctProgramaCodigos: distinctProgramaCodigos,
     canalCounts: canalCounts,
     buildCanalMap: buildCanalMap,
-    dailyTrend: dailyTrend
+    dailyTrend: dailyTrend,
+    buildProgramaMap: buildProgramaMap,
+    programaCounts: programaCounts
   };
 })();
 /* __DASHBOARD_CORE_END__ */
@@ -358,6 +431,8 @@ const DashboardCore = (function () {
   const matriculasAll = DashboardCore.parseCsv(embeddedCsv("csv-matriculas"));
   const canalRows = DashboardCore.parseCsv(embeddedCsv("csv-canal"));
   const canalMap = DashboardCore.buildCanalMap(canalRows);
+  const programaRows = DashboardCore.parseCsv(embeddedCsv("csv-programa"));
+  const programaMap = DashboardCore.buildProgramaMap(programaRows);
 
   const programaSelect = document.getElementById("filterPrograma");
   DashboardCore.distinctProgramaCodigos(consultasAll).forEach(function (code) {
@@ -503,24 +578,72 @@ const DashboardCore = (function () {
       "per DASHBOARD_BUILD_CONTRACT.md.";
   }
 
+  // Increment 4: same filtered `consultas` as every other view, rolled up
+  // via DashboardCore.programaCounts (same shape as canalCounts). No
+  // separate filter pass, no separate hierarchy rule: programaMap comes
+  // from the same input/programa_mapping.csv parsed once at load, so a
+  // programa_codigo filter naturally produces a single-branch, coherent
+  // hierarchy slice (one código -> one programa -> one área).
+  function renderProgram(lifecycleTotals) {
+    const opts = currentFilters();
+    const consultas = DashboardCore.filterConsultas(consultasAll, opts);
+    const rollup = DashboardCore.programaCounts(consultas, programaMap);
+
+    function fillLevel(bodyId, totalId, counts, rowFn) {
+      const body = document.getElementById(bodyId);
+      body.innerHTML = "";
+      const names = Object.keys(counts).sort(function (a, b) { return counts[b] - counts[a]; });
+      let sum = 0;
+      names.forEach(function (name) {
+        const n = counts[name];
+        sum += n;
+        const tr = document.createElement("tr");
+        tr.innerHTML = rowFn(name, n);
+        body.appendChild(tr);
+      });
+      document.getElementById(totalId).textContent = sum;
+      return sum;
+    }
+
+    const areaSum = fillLevel("areaBody", "areaTotal", rollup.byArea, function (area, n) {
+      return "<td>" + esc(area) + "</td><td class='num'>" + n + "</td>";
+    });
+    const programaSum = fillLevel("programaBody", "programaTotal", rollup.byPrograma, function (programa, n) {
+      const anyCode = Object.keys(programaMap).find(function (c) { return programaMap[c].programa === programa; });
+      const area = anyCode ? programaMap[anyCode].area : "";
+      return "<td>" + esc(programa) + "</td><td>" + esc(area) + "</td><td class='num'>" + n + "</td>";
+    });
+    const codigoSum = fillLevel("codigoBody", "codigoTotal", rollup.byCodigo, function (codigo, n) {
+      const info = programaMap[codigo];
+      return "<td>" + esc(codigo) + "</td><td>" + esc(info ? info.programa : "") + "</td><td class='num'>" + n + "</td>";
+    });
+
+    document.getElementById("programReconcileNote").textContent =
+      "Área total (" + areaSum + "), Programa total (" + programaSum + ") and Código total (" + codigoSum +
+      ") all equal Leads (" + lifecycleTotals.leads + ") for the current filter — reconciled by construction: " +
+      "every código maps to exactly one programa, and every programa to exactly one área " +
+      "(input/programa_mapping.csv), per DASHBOARD_BUILD_CONTRACT.md.";
+  }
+
   function renderAll() {
     const totals = renderLifecycle();
     renderTrend(totals);
     renderOrigin(totals);
+    renderProgram(totals);
   }
 
   programaSelect.addEventListener("change", renderAll);
   document.getElementById("filterStart").addEventListener("change", renderAll);
   document.getElementById("filterEnd").addEventListener("change", renderAll);
 
-  // View switching: exactly one view section visible at a time. Lifecycle
-  // Status, Acquisition → Enrollment Trend, and Origin are implemented and
-  // clickable; Program Interest remains disabled scaffolding — clicking it
-  // is a no-op because there is nothing yet to switch to.
+  // View switching: exactly one view section visible at a time. All four
+  // required views — Lifecycle Status, Acquisition → Enrollment Trend,
+  // Origin, and Program Interest — are implemented and clickable.
   const VIEW_SECTIONS = {
     lifecycle: document.getElementById("view-lifecycle"),
     trend: document.getElementById("view-trend"),
-    origin: document.getElementById("view-origin")
+    origin: document.getElementById("view-origin"),
+    program: document.getElementById("view-program")
   };
   document.getElementById("viewNav").addEventListener("click", function (e) {
     const btn = e.target.closest(".nav button:not([disabled])");

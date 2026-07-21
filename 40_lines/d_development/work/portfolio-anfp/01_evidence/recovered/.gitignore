@@ -1,0 +1,3 @@
+# Private recovered artifacts never enter Git.
+# Sanitized derivatives (*.SANITIZED.md) are tracked instead.
+*.PRIVATE.*

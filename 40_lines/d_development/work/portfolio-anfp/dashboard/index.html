@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Marketing Operations Dashboard — Increment 1</title>
+<style>
+:root{
+  --bg:#f5f3ec; --ink:#000; --muted:#5d625f; --line:#d8d4ca; --panel:#fff;
+  --accent:#248692; --ok:#6d7c50; --bad:#c73a4a; --warn:#b0813c;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:Inter,system-ui,-apple-system,sans-serif;font-size:15px}
+main{max-width:1180px;margin:auto;padding:28px 20px 64px}
+h1{font-family:Georgia,serif;font-size:clamp(1.8rem,4vw,3rem);line-height:1;margin:0 0 12px;max-width:820px}
+h2{font-family:Georgia,serif;font-size:1.35rem;margin:0 0 6px}
+h3{font-size:1rem;margin:18px 0 8px}
+p{line-height:1.6;max-width:74ch}
+.kicker{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:.76rem;letter-spacing:.12em;text-transform:uppercase;color:var(--accent)}
+.disclosure{border:1px solid var(--warn);background:#fbf4e8;border-radius:14px;padding:16px 18px;margin:16px 0 22px;font-size:.88rem;line-height:1.55}
+.disclosure strong{color:var(--warn)}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:18px;padding:22px;margin-bottom:16px}
+.note{font-size:.87rem;color:var(--muted);max-width:78ch}
+.nav{display:flex;flex-wrap:wrap;gap:8px;margin:18px 0 20px}
+.nav button{border:1px solid var(--line);background:#ece9e1;border-radius:12px;padding:10px 14px;font-size:.82rem;font-weight:700;cursor:pointer;color:var(--ink);font-family:inherit}
+.nav button.active{background:var(--ink);color:#fff}
+.nav button[disabled]{opacity:.45;cursor:not-allowed}
+.nav .pending{display:block;font-weight:400;font-size:.7rem;color:var(--muted);margin-top:2px}
+.filters{display:flex;flex-wrap:wrap;gap:14px;align-items:flex-end;margin:16px 0 20px;padding:16px;border:1px solid var(--line);border-radius:14px;background:#fbfaf6}
+.filters label{display:block;font-size:.76rem;color:var(--muted);margin-bottom:4px}
+.filters select,.filters input{border:1px solid var(--line);border-radius:8px;padding:7px 9px;font-size:.85rem;background:#fff;font-family:inherit}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin:6px 0 22px}
+@media(max-width:750px){.stats{grid-template-columns:1fr}}
+.stat{border:1px solid var(--line);border-radius:14px;padding:14px;background:#fbfaf6}
+.stat .lbl{font-size:.78rem;color:var(--muted)}
+.stat strong{display:block;font-size:1.55rem;margin-top:2px}
+.stat .formula{font-size:.72rem;color:var(--muted);font-family:ui-monospace,Menlo,monospace;margin-top:4px}
+.estado-list{display:grid;gap:8px;margin:14px 0}
+.estado-row{display:grid;grid-template-columns:minmax(120px,34%) 1fr 40px;align-items:center;gap:10px}
+@media(max-width:520px){.estado-row{grid-template-columns:1fr;gap:4px}.estado-row .count{text-align:left}}
+.estado-row .name{font-size:.88rem}
+.estado-row .tag{display:inline-block;font-size:.68rem;font-weight:700;border-radius:6px;padding:1px 6px;margin-left:6px}
+.tag-terminal{background:#fbeaec;color:var(--bad)}
+.tag-reversible{background:#f6e8d2;color:var(--warn)}
+.bar-track{background:#ece9e1;border-radius:8px;height:22px;position:relative;overflow:hidden}
+.bar-fill{display:block;background:var(--accent);height:100%;border-radius:8px 0 0 8px}
+.estado-row .count{text-align:right;font-family:ui-monospace,Menlo,monospace;font-size:.86rem}
+footer{margin-top:28px;color:var(--muted);font-size:.83rem;line-height:1.6}
+.badge{display:inline-block;border:1px solid var(--line);border-radius:999px;padding:4px 10px;font-size:.74rem;background:#fff;margin-right:6px}
+</style>
+</head>
+<body>
+<main>
+<header>
+  <div class="kicker">Marketing Operations System · Dashboard View · Increment 1</div>
+  <h1>Prospect Lifecycle — Marketing Operations Dashboard</h1>
+  <p>How does a prospect evolve through the operational system? This is the primary question this dashboard answers, before any aggregate marketing-operations question. This increment implements the Lifecycle Status view only; the remaining required views are scaffolded below and arrive in later increments.</p>
+  <div class="disclosure">
+    <strong>All data on this page is synthetic.</strong>
+    The historical system this reconstructs (documented in <code>dashboard-audit.md</code>) had five specific, unresolved data anomalies: a mismatch between total leads and the sum of status counts, an unreconciled conversion percentage, a negative channel count, person names leaking into a source field, and an unconfirmed channel-grouping rule. Those anomalies are described in the project's evidence documents, not reproduced here — the numbers on this page are deliberately clean and internally consistent, per <code>DASHBOARD_BUILD_CONTRACT.md</code>. The "Canal" grouping shown here follows an explicit synthetic mapping table (visible in <code>input/canal_mapping.csv</code>), not the historical, unconfirmed production rule.
+  </div>
+</header>
+
+<nav class="nav" id="viewNav">
+  <button class="active" data-view="lifecycle">Lifecycle Status</button>
+  <button disabled data-view="trend">Acquisition → Enrollment Trend<span class="pending">later increment</span></button>
+  <button disabled data-view="origin">Origin<span class="pending">later increment</span></button>
+  <button disabled data-view="program">Program Interest<span class="pending">later increment</span></button>
+</nav>
+
+<div class="filters">
+  <div>
+    <label for="filterPrograma">Program code</label>
+    <select id="filterPrograma"><option value="">All</option></select>
+  </div>
+  <div>
+    <label for="filterStart">From</label>
+    <input type="date" id="filterStart" value="2025-08-01">
+  </div>
+  <div>
+    <label for="filterEnd">To</label>
+    <input type="date" id="filterEnd" value="2025-08-31">
+  </div>
+</div>
+
+<section class="card">
+  <div class="stats">
+    <div class="stat"><span class="lbl">Leads</span><strong id="statLeads">0</strong><span class="formula">count of Consulta records</span></div>
+    <div class="stat"><span class="lbl">Matrículas</span><strong id="statMatriculas">0</strong><span class="formula">count of Matrícula records</span></div>
+    <div class="stat"><span class="lbl">Conversion %</span><strong id="statConversion">0%</strong><span class="formula">Matrículas ÷ Leads</span></div>
+  </div>
+
+  <h2>Lifecycle Status</h2>
+  <p class="note">Where prospects currently sit across the status set. This is a status/state set, <strong>not a sequential funnel</strong> — some states are terminal (<span class="tag tag-terminal">terminal</span>), at least one is reversible (<span class="tag tag-reversible">reversible</span>), and a prospect is not guaranteed to pass through every state.</p>
+  <div class="estado-list" id="estadoList"></div>
+  <p class="note" id="reconcileNote"></p>
+</section>
+
+<footer>
+  Reconstructed reference implementation — the second public view of the Marketing Operations System (<code>SYSTEM_CONTRACT_PROPOSAL.md</code>, <code>DASHBOARD_CONTRACT_PROPOSAL.md</code>, <code>DASHBOARD_BUILD_CONTRACT.md</code>). Not the historical production system. Processing occurs locally in the browser. <span class="badge">Increment 1 of the Dashboard View</span> <span class="badge">Lifecycle Status view only</span>
+</footer>
+</main>
+
+<script type="text/csv" id="csv-consultas">
+consulta_id,persona_id,fecha,estado,formulario_origen,programa_codigo
+C001,P001,2025-08-01,Interesado,web_form,DCG25-1
+C002,P002,2025-08-02,Interesado,webinar_form,DCG25-2
+C003,P003,2025-08-03,Interesado,sem_google,DGO25-1
+C004,P004,2025-08-04,Interesado,sem_meta,DGO25-2
+C005,P005,2025-08-05,Interesado,landing_expo,DFC25-1
+C006,P006,2025-08-06,Interesado,admision_directa,DFC25-2
+C007,P007,2025-08-07,Interesado,contacto_directo,DTA25-1
+C008,P008,2025-08-08,Interesado,referido_interno,DTA25-2
+C009,P009,2025-08-09,Interesado,web_form,DAD25-1
+C010,P010,2025-08-10,Interesado,webinar_form,DAD25-2
+C011,P011,2025-08-11,Interesado,sem_google,DTD25-1
+C012,P012,2025-08-12,Desechado,sem_meta,DTD25-2
+C013,P013,2025-08-13,Desechado,landing_expo,DCG25-1
+C014,P014,2025-08-14,Desechado,admision_directa,DCG25-2
+C015,P015,2025-08-15,Desechado,contacto_directo,DGO25-1
+C016,P016,2025-08-16,Desechado,referido_interno,DGO25-2
+C017,P017,2025-08-17,Desechado,web_form,DFC25-1
+C018,P018,2025-08-18,Gestionado,webinar_form,DFC25-2
+C019,P019,2025-08-19,Gestionado,sem_google,DTA25-1
+C020,P020,2025-08-20,Gestionado,sem_meta,DTA25-2
+C021,P021,2025-08-21,Gestionado,landing_expo,DAD25-1
+C022,P022,2025-08-22,Gestionado,admision_directa,DAD25-2
+C023,P023,2025-08-23,Gestionado,contacto_directo,DTD25-1
+C024,P024,2025-08-24,Matriculado,referido_interno,DTD25-2
+C025,P025,2025-08-25,Matriculado,web_form,DCG25-1
+C026,P026,2025-08-26,Matriculado,webinar_form,DCG25-2
+C027,P027,2025-08-27,Retracto Matrícula,sem_google,DGO25-1
+C028,P028,2025-08-28,Evaluado,sem_meta,DGO25-2
+C029,P029,2025-08-29,Matrícula en Proceso,landing_expo,DFC25-1
+C030,P030,2025-08-30,Reservar Matrícula,admision_directa,DFC25-2
+</script>
+<script type="text/csv" id="csv-matriculas">
+matricula_id,persona_id,fecha_matricula,programa_codigo
+M001,P024,2025-08-29,DTD25-2
+M002,P025,2025-08-30,DCG25-1
+M003,P026,2025-08-31,DCG25-2
+</script>
+<script type="text/csv" id="csv-canal">
+formulario_origen,canal
+web_form,Formularios Propios
+webinar_form,Formularios Propios
+landing_expo,Formularios Propios
+sem_google,Digital Ads
+sem_meta,Digital Ads
+admision_directa,Admisión Directa
+contacto_directo,Admisión Directa
+referido_interno,Referidos
+</script>
+
+<script>
+/* __DASHBOARD_CORE_START__ */
+/* Pure data logic: no DOM. Mirrors the canonical entities of
+   canonical-information-model.md (Consulta, Matrícula, Estado de consulta,
+   Canal/Origen) at the scope required by DASHBOARD_BUILD_CONTRACT.md
+   Increment 1 (Lifecycle Status view only). Synthetic data — no
+   external source, no network access. */
+const DashboardCore = (function () {
+  "use strict";
+
+  const ESTADOS = [
+    { name: "Interesado", terminal: false, reversible: false },
+    { name: "Desechado", terminal: true, reversible: false },
+    { name: "Gestionado", terminal: false, reversible: false },
+    { name: "Matriculado", terminal: true, reversible: false },
+    { name: "Retracto Matrícula", terminal: false, reversible: true },
+    { name: "Evaluado", terminal: false, reversible: false },
+    { name: "Matrícula en Proceso", terminal: false, reversible: false },
+    { name: "Reservar Matrícula", terminal: false, reversible: false }
+  ];
+
+  function parseCsv(text) {
+    const rows = [];
+    let row = [], field = "", quoted = false;
+    for (let i = 0; i < text.length; i++) {
+      const c = text[i], n = text[i + 1];
+      if (c === '"' && quoted && n === '"') { field += '"'; i++; }
+      else if (c === '"') { quoted = !quoted; }
+      else if (c === "," && !quoted) { row.push(field); field = ""; }
+      else if ((c === "\n" || c === "\r") && !quoted) {
+        if (c === "\r" && n === "\n") i++;
+        row.push(field); field = "";
+        if (row.some(function (v) { return v !== ""; })) rows.push(row);
+        row = [];
+      } else field += c;
+    }
+    if (field.length || row.length) {
+      row.push(field);
+      if (row.some(function (v) { return v !== ""; })) rows.push(row);
+    }
+    const headers = rows.shift() || [];
+    return rows.map(function (cols) {
+      const o = {};
+      headers.forEach(function (h, i) { o[h] = cols[i] === undefined ? "" : cols[i]; });
+      return o;
+    });
+  }
+
+  function inRange(fecha, start, end) {
+    return (!start || fecha >= start) && (!end || fecha <= end);
+  }
+
+  function filterConsultas(consultas, opts) {
+    opts = opts || {};
+    return consultas.filter(function (r) {
+      if (opts.programaCodigo && r.programa_codigo !== opts.programaCodigo) return false;
+      return inRange(r.fecha, opts.start, opts.end);
+    });
+  }
+
+  function filterMatriculas(matriculas, opts) {
+    opts = opts || {};
+    return matriculas.filter(function (r) {
+      if (opts.programaCodigo && r.programa_codigo !== opts.programaCodigo) return false;
+      return inRange(r.fecha_matricula, opts.start, opts.end);
+    });
+  }
+
+  // Confirmed count: one row = one Consulta.
+  function leadsCount(consultas) { return consultas.length; }
+
+  // Confirmed count: one row = one Matrícula.
+  function matriculasCount(matriculas) { return matriculas.length; }
+
+  // Confirmed derived ratio (synthetic): reconciles exactly by construction,
+  // per DASHBOARD_BUILD_CONTRACT.md Required Metrics / Data Requirements.
+  function conversionRatio(consultas, matriculas) {
+    const leads = leadsCount(consultas);
+    if (leads === 0) return 0;
+    return matriculasCount(matriculas) / leads;
+  }
+
+  // Confirmed count per Estado de consulta value. Sums exactly to leadsCount
+  // by construction (every consulta has exactly one estado).
+  function estadoCounts(consultas) {
+    const counts = {};
+    ESTADOS.forEach(function (e) { counts[e.name] = 0; });
+    consultas.forEach(function (r) {
+      if (counts[r.estado] === undefined) counts[r.estado] = 0;
+      counts[r.estado]++;
+    });
+    return counts;
+  }
+
+  function distinctProgramaCodigos(consultas) {
+    const seen = {};
+    consultas.forEach(function (r) { seen[r.programa_codigo] = true; });
+    return Object.keys(seen).sort();
+  }
+
+  // Canal rollup, using the explicit synthetic mapping table only — never
+  // an invented rule. Every distinct origin value in `consultas` must have
+  // a mapping entry (validated by the smoke test).
+  function canalCounts(consultas, canalMap) {
+    const byOrigin = {};
+    consultas.forEach(function (r) {
+      byOrigin[r.formulario_origen] = (byOrigin[r.formulario_origen] || 0) + 1;
+    });
+    const byCanal = {};
+    Object.keys(byOrigin).forEach(function (origin) {
+      const canal = canalMap[origin];
+      byCanal[canal] = (byCanal[canal] || 0) + byOrigin[origin];
+    });
+    return { byOrigin: byOrigin, byCanal: byCanal };
+  }
+
+  function buildCanalMap(canalRows) {
+    const map = {};
+    canalRows.forEach(function (r) { map[r.formulario_origen] = r.canal; });
+    return map;
+  }
+
+  return {
+    ESTADOS: ESTADOS,
+    parseCsv: parseCsv,
+    filterConsultas: filterConsultas,
+    filterMatriculas: filterMatriculas,
+    leadsCount: leadsCount,
+    matriculasCount: matriculasCount,
+    conversionRatio: conversionRatio,
+    estadoCounts: estadoCounts,
+    distinctProgramaCodigos: distinctProgramaCodigos,
+    canalCounts: canalCounts,
+    buildCanalMap: buildCanalMap
+  };
+})();
+/* __DASHBOARD_CORE_END__ */
+</script>
+
+<script>
+/* ---------------- UI layer (DOM only; all logic lives in DashboardCore) ---------------- */
+(function () {
+  "use strict";
+
+  function embeddedCsv(id) {
+    return document.getElementById(id).textContent.replace(/^\n/, "");
+  }
+
+  const consultasAll = DashboardCore.parseCsv(embeddedCsv("csv-consultas"));
+  const matriculasAll = DashboardCore.parseCsv(embeddedCsv("csv-matriculas"));
+  const canalRows = DashboardCore.parseCsv(embeddedCsv("csv-canal"));
+  const canalMap = DashboardCore.buildCanalMap(canalRows);
+
+  const programaSelect = document.getElementById("filterPrograma");
+  DashboardCore.distinctProgramaCodigos(consultasAll).forEach(function (code) {
+    const opt = document.createElement("option");
+    opt.value = code; opt.textContent = code;
+    programaSelect.appendChild(opt);
+  });
+
+  function esc(s) {
+    return String(s == null ? "" : s).replace(/[&<>"']/g, function (c) {
+      return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#039;" }[c];
+    });
+  }
+
+  function currentFilters() {
+    return {
+      programaCodigo: programaSelect.value || "",
+      start: document.getElementById("filterStart").value || "",
+      end: document.getElementById("filterEnd").value || ""
+    };
+  }
+
+  function render() {
+    const opts = currentFilters();
+    const consultas = DashboardCore.filterConsultas(consultasAll, opts);
+    const matriculas = DashboardCore.filterMatriculas(matriculasAll, opts);
+
+    const leads = DashboardCore.leadsCount(consultas);
+    const mats = DashboardCore.matriculasCount(matriculas);
+    const conv = DashboardCore.conversionRatio(consultas, matriculas);
+
+    document.getElementById("statLeads").textContent = leads;
+    document.getElementById("statMatriculas").textContent = mats;
+    document.getElementById("statConversion").textContent = (conv * 100).toFixed(1) + "%";
+
+    const counts = DashboardCore.estadoCounts(consultas);
+    const max = Math.max(1, Object.values(counts).reduce(function (a, b) { return Math.max(a, b); }, 0));
+    const list = document.getElementById("estadoList");
+    list.innerHTML = "";
+    DashboardCore.ESTADOS.forEach(function (e) {
+      const n = counts[e.name] || 0;
+      const pct = Math.round((n / max) * 100);
+      const row = document.createElement("div");
+      row.className = "estado-row";
+      const tag = e.terminal ? "<span class='tag tag-terminal'>terminal</span>"
+        : e.reversible ? "<span class='tag tag-reversible'>reversible</span>" : "";
+      row.innerHTML =
+        "<span class='name'>" + esc(e.name) + tag + "</span>" +
+        "<span class='bar-track'><span class='bar-fill' style='width:" + pct + "%'></span></span>" +
+        "<span class='count'>" + n + "</span>";
+      list.appendChild(row);
+    });
+
+    const sumEstados = Object.values(counts).reduce(function (a, b) { return a + b; }, 0);
+    document.getElementById("reconcileNote").textContent =
+      "Sum of status counts (" + sumEstados + ") equals Leads (" + leads + ") for the current filter — reconciled by construction, per DASHBOARD_BUILD_CONTRACT.md.";
+  }
+
+  programaSelect.addEventListener("change", render);
+  document.getElementById("filterStart").addEventListener("change", render);
+  document.getElementById("filterEnd").addEventListener("change", render);
+
+  // Scaffolded nav: only the Lifecycle Status view is implemented in this
+  // increment. The other three buttons are disabled, not fake — clicking
+  // is a no-op because there is nothing yet to switch to.
+  document.getElementById("viewNav").addEventListener("click", function (e) {
+    const btn = e.target.closest("button[data-view='lifecycle']");
+    if (btn) render();
+  });
+
+  render();
+})();
+</script>
+</body>
+</html>

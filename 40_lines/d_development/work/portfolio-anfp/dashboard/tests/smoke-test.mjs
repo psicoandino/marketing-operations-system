@@ -1,17 +1,20 @@
 #!/usr/bin/env node
 /**
- * Smoke test for the Dashboard View — Increment 3 (Lifecycle Status +
- * Acquisition → Enrollment Trend + Origin). Increment 1 and 2's checks are
- * preserved verbatim below except for the nav-count assertions that
- * literally encoded "exactly 2 views enabled" — those are updated to
- * "exactly 3 enabled" because enabling the Origin view is this increment's
- * explicit purpose, not a regression. Every other prior assertion, and
- * every prior view's rendered behavior, is unchanged.
+ * Smoke test for the Dashboard View — Increment 4 (all four required views:
+ * Lifecycle Status + Acquisition → Enrollment Trend + Origin + Program
+ * Interest). Increments 1-3's checks are preserved verbatim below except
+ * for the nav-count assertions that literally encoded "exactly 3 views
+ * enabled" — those are updated to "exactly 4 enabled" because enabling the
+ * Program Interest view is this increment's explicit purpose, not a
+ * regression. Every other prior assertion, and every prior view's rendered
+ * behavior, is unchanged. EN | ES / localStorage language persistence is
+ * explicitly out of scope for this increment (deferred to Increment 5) and
+ * is left untouched — no assertion is added or removed about its absence.
  *
  * Verifies, mechanically, against DASHBOARD_BUILD_CONTRACT.md:
  *   - required files exist, no external runtime dependencies, no network calls;
  *   - embedded CSVs match the input/*.csv fixtures exactly;
- *   - the nav scaffolds exactly 4 views, with exactly 3 enabled this increment;
+ *   - the nav scaffolds exactly 4 views, all 4 enabled this increment;
  *   - the synthetic-data + historical-anomalies disclosure is present;
  *   - Estado de consulta has exactly the 8 contract-specified values;
  *   - status counts reconcile exactly to Leads (no forced/hidden equality);
@@ -31,7 +34,12 @@
  *   - [Increment 3] every origin maps to exactly one documented Canal;
  *   - [Increment 3] no duplicated filtering/aggregation logic was
  *     introduced for the new view;
- *   - [Increment 3] Program Interest remains unimplemented.
+ *   - [Increment 4] the Program Interest view's Área, Programa and
+ *     Código totals each reconcile exactly to Leads, filtered and unfiltered;
+ *   - [Increment 4] every código maps to exactly one programa, and every
+ *     programa to exactly one área;
+ *   - [Increment 4] no duplicated filtering/aggregation logic was
+ *     introduced for the new view.
  *
  * Run: node tests/smoke-test.mjs   (no dependencies beyond Node >= 16)
  */
@@ -57,6 +65,7 @@ const requiredFiles = [
   "input/consultas.csv",
   "input/matriculas.csv",
   "input/canal_mapping.csv",
+  "input/programa_mapping.csv",
   "tests/smoke-test.mjs"
 ];
 for (const f of requiredFiles) check(`file exists: ${f}`, existsSync(resolve(root, f)));
@@ -67,6 +76,7 @@ const html = readFileSync(resolve(root, "index.html"), "utf8");
 const consultasCsv = readFileSync(resolve(root, "input/consultas.csv"), "utf8");
 const matriculasCsv = readFileSync(resolve(root, "input/matriculas.csv"), "utf8");
 const canalCsv = readFileSync(resolve(root, "input/canal_mapping.csv"), "utf8");
+const programaCsv = readFileSync(resolve(root, "input/programa_mapping.csv"), "utf8");
 
 // ---------- self-containment ----------
 section("self-containment");
@@ -91,12 +101,15 @@ function embeddedBlock(id) {
 const embeddedConsultas = embeddedBlock("csv-consultas");
 const embeddedMatriculas = embeddedBlock("csv-matriculas");
 const embeddedCanal = embeddedBlock("csv-canal");
+const embeddedPrograma = embeddedBlock("csv-programa");
 check("csv-consultas block present", embeddedConsultas !== null);
 check("csv-consultas matches input/consultas.csv", embeddedConsultas === consultasCsv);
 check("csv-matriculas block present", embeddedMatriculas !== null);
 check("csv-matriculas matches input/matriculas.csv", embeddedMatriculas === matriculasCsv);
 check("csv-canal block present", embeddedCanal !== null);
 check("csv-canal matches input/canal_mapping.csv", embeddedCanal === canalCsv);
+check("csv-programa block present", embeddedPrograma !== null);
+check("csv-programa matches input/programa_mapping.csv", embeddedPrograma === programaCsv);
 
 // ---------- nav scaffolding ----------
 section("navigation scaffolding (4 required views)");
@@ -107,14 +120,10 @@ if (navMatch) {
   check("exactly 4 view buttons", buttons.length === 4, `found ${buttons.length}`);
   const enabled = buttons.filter(([attrs]) => !/disabled/.test(attrs));
   const disabled = buttons.filter(([attrs]) => /disabled/.test(attrs));
-  check("exactly 3 views enabled this increment", enabled.length === 3, `found ${enabled.length}`);
-  check("exactly 1 view disabled (later increment)", disabled.length === 1, `found ${disabled.length}`);
-  check("the enabled views are exactly 'lifecycle', 'trend' and 'origin'",
-    JSON.stringify(enabled.map((b) => b[2]).sort()) === JSON.stringify(["lifecycle", "origin", "trend"]));
-  check("the disabled view is 'program' (not implemented this increment)",
-    JSON.stringify(disabled.map((b) => b[2]).sort()) === JSON.stringify(["program"]));
-  check("disabled views are labeled as a later increment",
-    disabled.every(() => /later increment/.test(navMatch[1])));
+  check("all 4 views enabled this increment", enabled.length === 4, `found ${enabled.length}`);
+  check("no view remains disabled", disabled.length === 0, `found ${disabled.length}`);
+  check("the enabled views are exactly 'lifecycle', 'trend', 'origin' and 'program'",
+    JSON.stringify(enabled.map((b) => b[2]).sort()) === JSON.stringify(["lifecycle", "origin", "program", "trend"]));
 }
 
 // ---------- disclosure ----------
@@ -140,12 +149,9 @@ check("view-trend section present", /id="view-trend"/.test(html));
 check("view-trend starts hidden in the static markup", /id="view-trend" hidden/.test(html));
 check("Trend nav button is enabled (no disabled attribute)",
   /<button data-view="trend">/.test(html));
-check("Program Interest nav button remains disabled", /<button disabled data-view="program">/.test(html));
 check("Trend table has Date/Leads/Matrículas columns",
   /<th>Date<\/th>/.test(html) && />Leads<\/th>/.test(html) && />Matrículas<\/th>/.test(html));
 check("Trend view has a reconciliation note element", /id="trendReconcileNote"/.test(html));
-check("no view-program section rendered (not implemented this increment)",
-  !/id="view-program"/.test(html));
 
 // ---------- [Increment 3] Origin view markup ----------
 section("Origin view markup (Increment 3)");
@@ -162,6 +168,22 @@ check("Origin view has a reconciliation note element", /id="originReconcileNote"
 check("Canal is disclosed as a synthetic, documented grouping, not the historical rule",
   /Canal is a synthetic, documented grouping/i.test(html) &&
   /not a reproduction of the historical, unconfirmed production channel-grouping rule/i.test(html));
+
+// ---------- [Increment 4] Program Interest view markup ----------
+section("Program Interest view markup (Increment 4)");
+check("view-origin section still present (regression check)", /id="view-origin"/.test(html));
+check("view-program section present", /id="view-program"/.test(html));
+check("view-program starts hidden in the static markup", /id="view-program" hidden/.test(html));
+check("Program Interest nav button is enabled (no disabled attribute)",
+  /<button data-view="program">/.test(html));
+check("no nav button remains disabled (all 4 views implemented)",
+  !/<button disabled/.test(html));
+check("Área table present", /id="areaBody"/.test(html) && /<th>Área<\/th>/.test(html));
+check("Programa table present", /id="programaBody"/.test(html) && /<th>Programa<\/th>/.test(html));
+check("Código table present", /id="codigoBody"/.test(html) && /<th>Código<\/th>/.test(html));
+check("Program Interest view has a reconciliation note element", /id="programReconcileNote"/.test(html));
+check("Área/Programa disclosed as a synthetic, documented hierarchy",
+  /Área\/Programa are a synthetic, documented hierarchy/i.test(html));
 
 // ---------- funnel non-assertion ----------
 section("funnel non-assertion");
@@ -203,6 +225,8 @@ if (Core) {
   const matriculas = Core.parseCsv(matriculasCsv);
   const canalRows = Core.parseCsv(canalCsv);
   const canalMap = Core.buildCanalMap(canalRows);
+  const programaRows = Core.parseCsv(programaCsv);
+  const programaMap = Core.buildProgramaMap(programaRows);
 
   section("dimension completeness");
   const CONTRACT_ESTADOS = [
@@ -316,6 +340,51 @@ if (Core) {
   check("Canal rollup covers exactly the Canal values reachable from used origins",
     JSON.stringify(Object.keys(canal.byCanal).sort()) === JSON.stringify([...canalValuesUsed].sort()));
 
+  section("Program Interest view reconciliation (Increment 4)");
+  const programaRollup = Core.programaCounts(consultas, programaMap);
+  const areaSum = Object.values(programaRollup.byArea).reduce((a, b) => a + b, 0);
+  const programaSum = Object.values(programaRollup.byPrograma).reduce((a, b) => a + b, 0);
+  const codigoSum = Object.values(programaRollup.byCodigo).reduce((a, b) => a + b, 0);
+  check("Área total equals Leads exactly (unfiltered)", areaSum === leads, `areaSum=${areaSum}, leads=${leads}`);
+  check("Programa total equals Leads exactly (unfiltered)", programaSum === leads, `programaSum=${programaSum}, leads=${leads}`);
+  check("Código total equals Leads exactly (unfiltered)", codigoSum === leads, `codigoSum=${codigoSum}, leads=${leads}`);
+
+  const filteredPrograma = Core.programaCounts(filteredConsultas, programaMap);
+  const filteredAreaSum = Object.values(filteredPrograma.byArea).reduce((a, b) => a + b, 0);
+  const filteredProgramaSum = Object.values(filteredPrograma.byPrograma).reduce((a, b) => a + b, 0);
+  const filteredCodigoSum = Object.values(filteredPrograma.byCodigo).reduce((a, b) => a + b, 0);
+  check("Área total equals filtered Leads exactly (program-code filter)",
+    filteredAreaSum === filteredConsultas.length);
+  check("Programa total equals filtered Leads exactly (program-code filter)",
+    filteredProgramaSum === filteredConsultas.length);
+  check("Código total equals filtered Leads exactly (program-code filter)",
+    filteredCodigoSum === filteredConsultas.length);
+  check("a program-code filter produces a single-branch, coherent hierarchy slice",
+    Object.keys(filteredPrograma.byCodigo).length === 1 &&
+    Object.keys(filteredPrograma.byPrograma).length === 1 &&
+    Object.keys(filteredPrograma.byArea).length === 1);
+
+  const distinctCodigos = [...new Set(consultas.map((r) => r.programa_codigo))];
+  check("every distinct programa_codigo used in consultas.csv has a programa mapping entry",
+    distinctCodigos.every((c) => !!programaMap[c]));
+  check("every código maps to exactly one programa (one-código-to-one-programa)",
+    distinctCodigos.every((c) => typeof programaMap[c].programa === "string" && programaMap[c].programa.length > 0));
+  check("every programa maps to exactly one área (one-programa-to-one-área)",
+    distinctCodigos.every((c) => typeof programaMap[c].area === "string" && programaMap[c].area.length > 0));
+  const programaToAreas = {};
+  programaRows.forEach((r) => {
+    programaToAreas[r.programa_nombre] = programaToAreas[r.programa_nombre] || new Set();
+    programaToAreas[r.programa_nombre].add(r.area);
+  });
+  check("no programa maps to more than one área in the mapping fixture",
+    Object.values(programaToAreas).every((set) => set.size === 1));
+  check("no negative count at any Program Interest hierarchy level",
+    Object.values(programaRollup.byArea).every((n) => n >= 0) &&
+    Object.values(programaRollup.byPrograma).every((n) => n >= 0) &&
+    Object.values(programaRollup.byCodigo).every((n) => n >= 0));
+  check("no duplicate programa_codigo rows in the mapping fixture (unambiguous one-to-one join)",
+    new Set(programaRows.map((r) => r.programa_codigo)).size === programaRows.length);
+
   section("no duplicated logic introduced (Increment 2 & 3 constraint)");
   const coreSource = html.slice(si, ei);
   function countOccurrences(src, pattern) {
@@ -334,6 +403,10 @@ if (Core) {
     countOccurrences(coreSource, /function canalCounts\(/g) === 1);
   check("exactly one buildCanalMap implementation (no duplicated Canal-mapping logic)",
     countOccurrences(coreSource, /function buildCanalMap\(/g) === 1);
+  check("exactly one programaCounts implementation (no duplicated aggregation logic)",
+    countOccurrences(coreSource, /function programaCounts\(/g) === 1);
+  check("exactly one buildProgramaMap implementation (no duplicated hierarchy-mapping logic)",
+    countOccurrences(coreSource, /function buildProgramaMap\(/g) === 1);
   check("only one DashboardCore module defined (no second application/rendering framework)",
     countOccurrences(html, /const DashboardCore = \(function/g) === 1);
   check("only one nav click handler wired (no duplicated navigation infrastructure)",

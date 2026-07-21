@@ -1,16 +1,17 @@
 #!/usr/bin/env node
 /**
- * Smoke test for the Dashboard View — Increment 2 (Lifecycle Status +
- * Acquisition → Enrollment Trend). Increment 1's checks are preserved
- * verbatim below except for three nav-count assertions that literally
- * encoded "only 1 view enabled" — those are updated to "2 enabled" because
- * enabling the Trend view is this increment's explicit purpose, not a
- * regression. Every other Increment 1 assertion is unchanged.
+ * Smoke test for the Dashboard View — Increment 3 (Lifecycle Status +
+ * Acquisition → Enrollment Trend + Origin). Increment 1 and 2's checks are
+ * preserved verbatim below except for the nav-count assertions that
+ * literally encoded "exactly 2 views enabled" — those are updated to
+ * "exactly 3 enabled" because enabling the Origin view is this increment's
+ * explicit purpose, not a regression. Every other prior assertion, and
+ * every prior view's rendered behavior, is unchanged.
  *
  * Verifies, mechanically, against DASHBOARD_BUILD_CONTRACT.md:
  *   - required files exist, no external runtime dependencies, no network calls;
  *   - embedded CSVs match the input/*.csv fixtures exactly;
- *   - the nav scaffolds exactly 4 views, with exactly 2 enabled this increment;
+ *   - the nav scaffolds exactly 4 views, with exactly 3 enabled this increment;
  *   - the synthetic-data + historical-anomalies disclosure is present;
  *   - Estado de consulta has exactly the 8 contract-specified values;
  *   - status counts reconcile exactly to Leads (no forced/hidden equality);
@@ -25,7 +26,12 @@
  *     Lifecycle Status's Leads/Matrículas, filtered and unfiltered;
  *   - [Increment 2] no duplicated data model, filter logic, or conversion
  *     formula was introduced for the new view;
- *   - [Increment 2] Origin and Program Interest remain unimplemented.
+ *   - [Increment 3] the Origin view's Canal and Formulario/Origen totals
+ *     each reconcile exactly to Leads, filtered and unfiltered;
+ *   - [Increment 3] every origin maps to exactly one documented Canal;
+ *   - [Increment 3] no duplicated filtering/aggregation logic was
+ *     introduced for the new view;
+ *   - [Increment 3] Program Interest remains unimplemented.
  *
  * Run: node tests/smoke-test.mjs   (no dependencies beyond Node >= 16)
  */
@@ -101,12 +107,12 @@ if (navMatch) {
   check("exactly 4 view buttons", buttons.length === 4, `found ${buttons.length}`);
   const enabled = buttons.filter(([attrs]) => !/disabled/.test(attrs));
   const disabled = buttons.filter(([attrs]) => /disabled/.test(attrs));
-  check("exactly 2 views enabled this increment", enabled.length === 2, `found ${enabled.length}`);
-  check("exactly 2 views disabled (later increments)", disabled.length === 2, `found ${disabled.length}`);
-  check("the enabled views are exactly 'lifecycle' and 'trend'",
-    JSON.stringify(enabled.map((b) => b[2]).sort()) === JSON.stringify(["lifecycle", "trend"]));
-  check("disabled views are 'origin' and 'program' (not implemented this increment)",
-    JSON.stringify(disabled.map((b) => b[2]).sort()) === JSON.stringify(["origin", "program"]));
+  check("exactly 3 views enabled this increment", enabled.length === 3, `found ${enabled.length}`);
+  check("exactly 1 view disabled (later increment)", disabled.length === 1, `found ${disabled.length}`);
+  check("the enabled views are exactly 'lifecycle', 'trend' and 'origin'",
+    JSON.stringify(enabled.map((b) => b[2]).sort()) === JSON.stringify(["lifecycle", "origin", "trend"]));
+  check("the disabled view is 'program' (not implemented this increment)",
+    JSON.stringify(disabled.map((b) => b[2]).sort()) === JSON.stringify(["program"]));
   check("disabled views are labeled as a later increment",
     disabled.every(() => /later increment/.test(navMatch[1])));
 }
@@ -134,13 +140,28 @@ check("view-trend section present", /id="view-trend"/.test(html));
 check("view-trend starts hidden in the static markup", /id="view-trend" hidden/.test(html));
 check("Trend nav button is enabled (no disabled attribute)",
   /<button data-view="trend">/.test(html));
-check("Origin nav button remains disabled", /<button disabled data-view="origin">/.test(html));
 check("Program Interest nav button remains disabled", /<button disabled data-view="program">/.test(html));
 check("Trend table has Date/Leads/Matrículas columns",
   /<th>Date<\/th>/.test(html) && />Leads<\/th>/.test(html) && />Matrículas<\/th>/.test(html));
 check("Trend view has a reconciliation note element", /id="trendReconcileNote"/.test(html));
-check("no view-origin or view-program section rendered (not implemented this increment)",
-  !/id="view-origin"/.test(html) && !/id="view-program"/.test(html));
+check("no view-program section rendered (not implemented this increment)",
+  !/id="view-program"/.test(html));
+
+// ---------- [Increment 3] Origin view markup ----------
+section("Origin view markup (Increment 3)");
+check("view-trend section still present (regression check)", /id="view-trend"/.test(html));
+check("view-origin section present", /id="view-origin"/.test(html));
+check("view-origin starts hidden in the static markup", /id="view-origin" hidden/.test(html));
+check("Origin nav button is enabled (no disabled attribute)",
+  /<button data-view="origin">/.test(html));
+check("Canal table present with Canal/Leads columns",
+  /id="canalBody"/.test(html) && /<th>Canal<\/th>/.test(html));
+check("Formulario/Origen table present with Formulario / Origen, Canal, Leads columns",
+  /id="originBody"/.test(html) && /Formulario \/ Origen/.test(html));
+check("Origin view has a reconciliation note element", /id="originReconcileNote"/.test(html));
+check("Canal is disclosed as a synthetic, documented grouping, not the historical rule",
+  /Canal is a synthetic, documented grouping/i.test(html) &&
+  /not a reproduction of the historical, unconfirmed production channel-grouping rule/i.test(html));
 
 // ---------- funnel non-assertion ----------
 section("funnel non-assertion");
@@ -275,7 +296,27 @@ if (Core) {
     trendFilteredLeadsSum === filteredConsultas.length &&
     trendFilteredMatsSum === filteredMatriculas.length);
 
-  section("no duplicated logic introduced (Increment 2 constraint)");
+  section("Origin view reconciliation (Increment 3)");
+  check("Canal total equals Leads exactly (unfiltered)",
+    Object.values(canal.byCanal).reduce((a, b) => a + b, 0) === leads,
+    `canalSum=${Object.values(canal.byCanal).reduce((a, b) => a + b, 0)}, leads=${leads}`);
+  check("Formulario/Origen total equals Leads exactly (unfiltered)",
+    Object.values(canal.byOrigin).reduce((a, b) => a + b, 0) === leads,
+    `originSum=${Object.values(canal.byOrigin).reduce((a, b) => a + b, 0)}, leads=${leads}`);
+
+  const filteredCanal = Core.canalCounts(filteredConsultas, canalMap);
+  check("Canal total equals filtered Leads exactly (program-code filter)",
+    Object.values(filteredCanal.byCanal).reduce((a, b) => a + b, 0) === filteredConsultas.length);
+  check("Formulario/Origen total equals filtered Leads exactly (program-code filter)",
+    Object.values(filteredCanal.byOrigin).reduce((a, b) => a + b, 0) === filteredConsultas.length);
+
+  check("every origin maps to exactly one Canal (one-origin-to-one-canal)",
+    distinctOrigins.every((o) => typeof canalMap[o] === "string" && canalMap[o].length > 0));
+  const canalValuesUsed = new Set(distinctOrigins.map((o) => canalMap[o]));
+  check("Canal rollup covers exactly the Canal values reachable from used origins",
+    JSON.stringify(Object.keys(canal.byCanal).sort()) === JSON.stringify([...canalValuesUsed].sort()));
+
+  section("no duplicated logic introduced (Increment 2 & 3 constraint)");
   const coreSource = html.slice(si, ei);
   function countOccurrences(src, pattern) {
     return (src.match(pattern) || []).length;
@@ -289,8 +330,16 @@ if (Core) {
   check("exactly one conversionRatio implementation (conversion formula stays mathematically consistent)",
     countOccurrences(coreSource, /function conversionRatio\(/g) === 1);
   check("exactly one dailyTrend implementation", countOccurrences(coreSource, /function dailyTrend\(/g) === 1);
+  check("exactly one canalCounts implementation (no duplicated aggregation logic)",
+    countOccurrences(coreSource, /function canalCounts\(/g) === 1);
+  check("exactly one buildCanalMap implementation (no duplicated Canal-mapping logic)",
+    countOccurrences(coreSource, /function buildCanalMap\(/g) === 1);
   check("only one DashboardCore module defined (no second application/rendering framework)",
     countOccurrences(html, /const DashboardCore = \(function/g) === 1);
+  check("only one nav click handler wired (no duplicated navigation infrastructure)",
+    countOccurrences(html, /getElementById\("viewNav"\)\.addEventListener\("click"/g) === 1);
+  check("no i18n/translation dictionary exists to duplicate (out of this contract's scope)",
+    !/I18N|translations\s*=|data-i18n/i.test(html));
 }
 
 // ---------- summary ----------

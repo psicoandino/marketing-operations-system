@@ -1,13 +1,17 @@
 /*
  * Public portfolio shell — restrained Psicoandino identity integration.
- * Loaded after the canonical psico-header.css; overrides only what the
- * public portfolio requires: the header sits in normal document flow
- * (never sticky/fixed) and disappears when the visitor prints a page.
+ * Loaded after each surface's own stylesheet (portfolio.css, or the app's
+ * inline <style>); overrides only what is required for cross-surface
+ * coherence, never business logic or layout structure.
  */
-psico-header{position:static;z-index:auto}
+
+/* Header: keep the canonical sticky behavior (position:sticky;top:0 is set
+   by psico-header.css itself); only align its inline gutter with the
+   shared content gutter and un-stick it for print. */
+:root{--psico-header-padding-inline:20px}
 
 @media print{
-  psico-header{display:none}
+  psico-header{position:static;display:none}
 }
 
 /* The public CV keeps its private print-first layout; on screen it only
@@ -16,4 +20,79 @@ body.cv-public .container{padding:28px 20px 64px}
 
 @media print{
   body.cv-public .container{padding:0}
+}
+
+/* Accessibility: one visible, high-contrast focus treatment for every
+   interactive control on every surface, including the CV's outbound
+   profile links. */
+a:focus-visible,
+button:focus-visible,
+select:focus-visible,
+input:focus-visible,
+[tabindex]:focus-visible{
+  outline:2px solid var(--psico-cobre,#248692);
+  outline-offset:2px;
+}
+
+/* Shared screen typography scale for the four application/narrative
+   surfaces (Landing, Case Study, Pipeline, Dashboard). The CV keeps its
+   own printable typography untouched. */
+:root{
+  --portfolio-h1-family:Georgia,serif;
+  --portfolio-h1-size:clamp(1.8rem,4vw,2.8rem);
+  --portfolio-h1-line-height:1.08;
+  --portfolio-h1-letter-spacing:normal;
+  --portfolio-h2-family:Georgia,serif;
+  --portfolio-h2-size:1.35rem;
+  --portfolio-h3-family:Inter,system-ui,-apple-system,sans-serif;
+  --portfolio-h3-size:1rem;
+}
+body:not(.cv-public) h1{
+  font-family:var(--portfolio-h1-family);
+  font-size:var(--portfolio-h1-size);
+  line-height:var(--portfolio-h1-line-height);
+  letter-spacing:var(--portfolio-h1-letter-spacing);
+  margin-bottom:14px;
+}
+body:not(.cv-public) h2{
+  font-family:var(--portfolio-h2-family);
+  font-size:var(--portfolio-h2-size);
+}
+body:not(.cv-public) h3{
+  font-family:var(--portfolio-h3-family);
+  font-size:var(--portfolio-h3-size);
+}
+
+/* Shared card and control radius across the four application/narrative
+   surfaces; each app keeps its own colors and functional distinctions. */
+body:not(.cv-public){
+  --portfolio-radius-card:16px;
+  --portfolio-radius-control:10px;
+}
+body:not(.cv-public) .card,
+body:not(.cv-public) .portfolio-card{border-radius:var(--portfolio-radius-card)}
+body:not(.cv-public) button.nav,
+body:not(.cv-public) button.download,
+body:not(.cv-public) .portfolio-cta{border-radius:var(--portfolio-radius-control)}
+
+/* Shared ES | EN language-control appearance across Landing, Case Study,
+   Pipeline and Dashboard — same dimensions, border, radius, typography
+   and active state, regardless of which app owns the click handling. */
+body:not(.cv-public) .lang-switch{display:flex;gap:6px;border:0;padding:0;background:none}
+body:not(.cv-public) .lang-btn{
+  font-family:ui-monospace,SFMono-Regular,Menlo,monospace;
+  font-weight:400;
+  font-size:.72rem;
+  letter-spacing:.08em;
+  padding:4px 10px;
+  border:1px solid var(--portfolio-line,#d8d4ca);
+  border-radius:999px;
+  background:var(--portfolio-panel,#fff);
+  color:var(--psico-oled,#000);
+}
+body:not(.cv-public) .lang-btn.active,
+body:not(.cv-public) .lang-btn[aria-pressed="true"]{
+  border-color:var(--psico-cobre,#248692);
+  color:var(--psico-cobre,#248692);
+  font-weight:700;
 }

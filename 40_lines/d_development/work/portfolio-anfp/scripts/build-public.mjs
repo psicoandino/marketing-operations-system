@@ -130,12 +130,47 @@ function injectShell(html, options) {
 /* App transforms (the only approved public adaptations)               */
 /* ------------------------------------------------------------------ */
 
+// Shared ES | EN toggle-order and Spanish-default adaptation for the two
+// apps (Pipeline, Dashboard). Each keeps its own independent i18n state
+// and localStorage key; only the DOM order of the two buttons and the
+// deterministic first-load default are adapted for the public copy, so
+// the shell-wide invariant (ES | EN order, Spanish default) holds without
+// touching either app's own language keys or dictionaries.
+const LANG_TOGGLE_SCRUB = [
+  [
+    '    <div class="lang-switch" role="group" aria-label="Language / Idioma">\n' +
+      '      <button class="lang-btn" id="langEn" data-lang="en">EN</button>\n' +
+      '      <button class="lang-btn" id="langEs" data-lang="es">ES</button>\n' +
+      "    </div>",
+    '    <div class="lang-switch" role="group" aria-label="Language / Idioma">\n' +
+      '      <button class="lang-btn" id="langEs" data-lang="es">ES</button>\n' +
+      '      <button class="lang-btn" id="langEn" data-lang="en">EN</button>\n' +
+      "    </div>",
+    1,
+    "lang toggle order",
+  ],
+  [
+    'return stored === "es" ? "es" : "en"; // English is the deterministic default',
+    'return stored === "en" ? "en" : "es"; // Spanish is the deterministic default',
+    1,
+    "lang deterministic default",
+  ],
+];
+
+function applyLangToggleScrub(html) {
+  let out = html;
+  for (const [from, to, expected, label] of LANG_TOGGLE_SCRUB) {
+    out = replaceCount(out, from, to, expected, label);
+  }
+  return out;
+}
+
 export function transformPipelineHtml(sourceHtml) {
-  return injectShell(sourceHtml, {
+  return injectShell(applyLangToggleScrub(sourceHtml), {
     current: "pipeline",
     root: "../",
     langKey: "anfp_pipeline_lang",
-    langDefault: "en",
+    langDefault: "es",
     fallbackLang: "en",
     pageLang: "en",
   });
@@ -162,10 +197,30 @@ const DASHBOARD_LABEL_SCRUB = [
   ["// Increment 3:", "// Origin view:", 1, "origin comment"],
   ["Increment 1's core", "the initial core", 1, "origin core comment"],
   ["// Increment 4:", "// Program Interest view:", 1, "program comment"],
+  // Visitor-facing internal document citations (.md / .csv paths) rewritten
+  // to plain named references. The substantive disclosure they support —
+  // that reconciliation and grouping rules are documented and verifiable —
+  // is unchanged; only the internal filename/path is no longer shown to a
+  // hiring visitor. These constants are templated into every note that
+  // cites them, so rewriting the single declaration is sufficient.
+  ['const CODE_AUDIT = "<code>dashboard-audit.md</code>";',
+    'const CODE_AUDIT = "<em>Dashboard Audit Notes</em>";', 1, "audit reference"],
+  ['const CODE_CONTRACT = "<code>DASHBOARD_BUILD_CONTRACT.md</code>";',
+    'const CODE_CONTRACT = "<em>Dashboard Build Contract</em>";', 1, "contract reference"],
+  ['const CODE_CANAL_CSV = "<code>input/canal_mapping.csv</code>";',
+    'const CODE_CANAL_CSV = "<em>Canal Mapping Reference</em>";', 1, "canal csv reference"],
+  ['const CODE_PROGRAMA_CSV = "<code>input/programa_mapping.csv</code>";',
+    'const CODE_PROGRAMA_CSV = "<em>Program Mapping Reference</em>";', 1, "programa csv reference"],
+  // Static footer credit line naming three internal contract documents by
+  // filename; the footer's own summary sentence (footerText) already
+  // discloses that this is a reconstructed reference implementation.
+  ['<span id="footerText"></span> <code>SYSTEM_CONTRACT_PROPOSAL.md</code>, ' +
+    '<code>DASHBOARD_CONTRACT_PROPOSAL.md</code>, <code>DASHBOARD_BUILD_CONTRACT.md</code>.',
+    '<span id="footerText"></span>', 1, "footer contract file list"],
 ];
 
 export function transformDashboardHtml(sourceHtml) {
-  let out = sourceHtml;
+  let out = applyLangToggleScrub(sourceHtml);
   for (const [from, to, expected, label] of DASHBOARD_LABEL_SCRUB) {
     out = replaceCount(out, from, to, expected, label);
   }
@@ -173,14 +228,27 @@ export function transformDashboardHtml(sourceHtml) {
     current: "dashboard",
     root: "../",
     langKey: "dashboard_lang",
-    langDefault: "en",
+    langDefault: "es",
     fallbackLang: "en",
     pageLang: "en",
   });
 }
 
+// CV_PRIVACY_MODE=B: keep the public professional email, remove the phone
+// number from the generated public CV only. private-source/cv_ricardo.html
+// itself is never modified; this rewrites a copy of its string content.
+function applyCvPrivacyMode(html) {
+  return replaceCount(
+    html,
+    "Santiago, Chile · rmorenoga@fen.uchile.cl · +56 9 3454 5677<br>",
+    "Santiago, Chile · rmorenoga@fen.uchile.cl<br>",
+    1,
+    "cv privacy mode B: remove phone",
+  );
+}
+
 export function transformCvHtml(sourceHtml) {
-  let out = sourceHtml;
+  let out = applyCvPrivacyMode(sourceHtml);
   out = replaceCount(
     out,
     '<html lang="es">',

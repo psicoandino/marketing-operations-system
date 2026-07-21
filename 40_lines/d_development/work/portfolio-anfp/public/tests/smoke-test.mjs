@@ -9,9 +9,20 @@
  *     byte-identical to transform(source), where the exported build
  *     transforms are the only approved public adaptations (shell
  *     navigation, identity integration, public metadata, increment-label
- *     removal);
+ *     removal, ES|EN toggle-order/default adaptation, CV privacy);
  *   - exactly two total links on the Case Study → exactly two primary
  *     narrative CTAs (Pipeline, Dashboard); shared-shell links are chrome.
+ *   - "header is never fixed/sticky" → superseded by the visual-convergence
+ *     pass: the header is now sticky (position:sticky;top:0, canonical
+ *     default) on screen and un-stuck only in print;
+ *   - "Pipeline/Dashboard may keep internal contract/audit filenames in
+ *     their disclosure text" → superseded: visitor-facing .md/.csv
+ *     filenames are now rewritten to plain named references in the public
+ *     copy (build-public.mjs DASHBOARD_LABEL_SCRUB), so the exemption for
+ *     those two files is removed from the visible-content scan;
+ *   - Pipeline/Dashboard EN-first toggle and English-first default →
+ *     superseded: both public copies now render ES | EN and default to
+ *     Spanish on first load, matching Landing/Case Study.
  * All unrelated checks (exposure scan, network-free, synthetic
  * disclosure, forbidden claims, source suites still passing) are kept.
  */
@@ -138,9 +149,22 @@ for (const [file, html] of Object.entries(surfaces)) {
     /<script src="[^"]*shell\/psico-shell\.js" defer><\/script>/.test(html));
   check(`${file}: html opts into header motif ownership`,
     html.includes('data-motif-owner="header"'));
-  check(`${file}: header is never fixed/sticky (public override present)`,
-    read("shell/public-shell.css").includes("psico-header{position:static"));
 }
+const headerCss = read("shell/psico-header/psico-header.css");
+const shellCss = read("shell/public-shell.css");
+const printBlocks = [...shellCss.matchAll(/@media print\{([^}]*\{[^}]*\}[^}]*)\}/g)]
+  .map((m) => m[1]);
+const shellCssOutsidePrint = printBlocks.reduce(
+  (css, block) => css.replace(block, ""), shellCss,
+);
+check("canonical header CSS declares sticky positioning (position:sticky;top:0)",
+  /psico-header\{[^}]*position:sticky;top:0/.test(headerCss));
+check("canonical header CSS sets a solid Hueso background (no bleed-through)",
+  /\.psico-header\{[^}]*background:rgba\(245,243,236,/.test(headerCss));
+check("public shell does not force the header out of sticky positioning on screen",
+  !/psico-header\{[^}]*position:static/.test(shellCssOutsidePrint));
+check("public shell un-sticks/hides the header in print",
+  printBlocks.some((b) => /psico-header\{[^}]*(display:none|position:static)/.test(b)));
 const bundle = read("shell/psico-shell.js");
 check("shell bundle is a classic script (no module syntax left)",
   !/^\s*import\s/m.test(bundle) && !/^\s*export\s/m.test(bundle));
@@ -165,6 +189,8 @@ for (const file of ["index.html", "case-study/index.html"]) {
   check(`${file}: static document language is Spanish`, html.includes('<html lang="es"'));
   check(`${file}: has EN and ES buttons`,
     html.includes('data-lang="en"') && html.includes('data-lang="es"'));
+  check(`${file}: toggle order is ES then EN`,
+    html.indexOf('data-lang="es"') < html.indexOf('data-lang="en"'));
   check(`${file}: uses the shared engine (no duplicated i18n logic)`,
     /<script src="[^"]*shell\/portfolio-i18n\.js" defer><\/script>/.test(html) &&
     !html.includes("localStorage"));
@@ -232,6 +258,58 @@ check("apps keep their own language keys (no conflicting shared control)",
   surfaces["pipeline/index.html"].includes('data-shell-lang-key="anfp_pipeline_lang"') &&
   surfaces["dashboard/index.html"].includes('data-shell-lang-key="dashboard_lang"'));
 
+/* == Pipeline & Dashboard: ES | EN order, Spanish default, shared tokens */
+console.log("\n== Pipeline & Dashboard language-control invariants ==");
+for (const file of ["pipeline/index.html", "dashboard/index.html"]) {
+  const html = surfaces[file];
+  check(`${file}: has EN and ES buttons`,
+    html.includes('data-lang="en"') && html.includes('data-lang="es"'));
+  check(`${file}: toggle order is ES then EN`,
+    html.indexOf('data-lang="es"') < html.indexOf('data-lang="en"'));
+  check(`${file}: Spanish is the deterministic first-load default`,
+    /return stored === "en" \? "en" : "es";/.test(html));
+  check(`${file}: no leftover English-first default logic`,
+    !/return stored === "es" \? "es" : "en";/.test(html));
+  check(`${file}: shared shell mirrors the same Spanish default`,
+    html.includes('data-shell-lang-default="es"'));
+}
+check("shared shell CSS defines one .lang-btn treatment applied to all four bilingual surfaces",
+  /body:not\(\.cv-public\) \.lang-btn\{/.test(shellCss) &&
+  /body:not\(\.cv-public\) \.lang-btn\.active,\s*\nbody:not\(\.cv-public\) \.lang-btn\[aria-pressed="true"\]\{/.test(shellCss));
+
+/* == CV privacy (CV_PRIVACY_MODE=B) ================================ */
+console.log("\n== CV privacy ==");
+const cvHtml = surfaces["cv/index.html"];
+check("CV keeps the public professional email",
+  cvHtml.includes("rmorenoga@fen.uchile.cl"));
+check("CV mode B: phone number is removed from the public copy",
+  !/\+56 ?9/.test(cvHtml) && !/tel:/.test(cvHtml));
+check("CV mode B: no dangling separator or broken contact row",
+  !/·\s*<br>/.test(cvHtml) && !/·\s*·/.test(cvHtml) &&
+  /Santiago, Chile · rmorenoga@fen\.uchile\.cl<br>/.test(cvHtml));
+check("CV keeps LinkedIn and GitHub profile links",
+  /https:\/\/linkedin\.com\/in\/psicoandino/.test(cvHtml) &&
+  /https:\/\/github\.com\/psicoandino/.test(cvHtml));
+check("CV print sizing rule is preserved (@page size:letter)",
+  cvHtml.includes("@page{") && cvHtml.includes("size:letter"));
+
+/* == shared typography & focus-visible tokens ====================== */
+console.log("\n== shared typography & focus-visible tokens ==");
+check("shared shell defines the H1/H2/H3 typography tokens",
+  shellCss.includes("--portfolio-h1-family") &&
+  shellCss.includes("--portfolio-h1-size") &&
+  shellCss.includes("--portfolio-h1-line-height"));
+check("shared shell applies those tokens to the four app/narrative surfaces, not the CV",
+  /body:not\(\.cv-public\) h1\{/.test(shellCss) &&
+  /body:not\(\.cv-public\) h2\{/.test(shellCss));
+check("shared shell defines a global :focus-visible treatment",
+  /a:focus-visible,\s*\nbutton:focus-visible,\s*\nselect:focus-visible,\s*\ninput:focus-visible/.test(shellCss));
+check("narrative prose width is close to 68ch (Landing/Case Study)",
+  read("shell/portfolio.css").includes("max-width:68ch"));
+check("Pipeline/Dashboard data tables keep their own wider containers (not forced to 68ch)",
+  surfaces["pipeline/index.html"].includes("max-width:1180px") &&
+  surfaces["dashboard/index.html"].includes("max-width:1180px"));
+
 /* == source app suites still pass unchanged ======================== */
 console.log("\n== source app suites still pass unchanged ==");
 function runsClean(scriptRelPath) {
@@ -251,14 +329,19 @@ check("dashboard/tests/smoke-test.mjs passes", runsClean("dashboard/tests/smoke-
 /* == no internal label, artifact, or private source exposed ======== */
 console.log("\n== no internal label, artifact, or private source exposed ==");
 const nonTestFiles = actualFiles.filter((f) => !f.startsWith("tests/"));
-// The Pipeline and Dashboard copies keep their own contract-mandated
-// disclosure text, which cites internal document names by design (their
-// source suites require it); what must never happen is shipping those
-// documents — covered by the exact-file-set check. The narrative and
-// shell surfaces, which this build authors, must not name them at all.
-const narrativeAndShellFiles = nonTestFiles.filter(
-  (f) => f !== "pipeline/index.html" && f !== "dashboard/index.html",
-);
+// Obsolete expectation replaced: previously Pipeline and Dashboard were
+// exempted wholesale from the contract/audit filename scan, because their
+// disclosure text cited internal document names by design. This pass
+// rewrites those citations to plain named references (build-public.mjs
+// DASHBOARD_LABEL_SCRUB) in the public copy only, so the exemption no
+// longer applies to visitor-facing (rendered) content. What each canonical
+// source app still keeps in its own JS *comments* (never rendered, and
+// off-limits to edit per "do not modify canonical source applications")
+// is excluded here by stripping <script> blocks before scanning.
+function stripScripts(html) {
+  return html.replace(/<script[^>]*>[\s\S]*?<\/script>/g, "");
+}
+const narrativeAndShellFiles = nonTestFiles.filter((f) => !f.endsWith(".csv"));
 for (const f of nonTestFiles) {
   const content = readFileSync(resolve(publicRoot, f), "utf8");
   check(`${f}: no internal increment label`, !/increment[o]?\s*[0-9]/i.test(content));
@@ -266,10 +349,15 @@ for (const f of nonTestFiles) {
   check(`${f}: no local absolute path`, !/\/Users\//.test(content) && !/[A-Z]:\\/.test(content));
 }
 for (const f of narrativeAndShellFiles) {
-  const content = readFileSync(resolve(publicRoot, f), "utf8");
-  check(`${f}: no internal contract/audit/evidence filename`,
-    !/CONTRACT\.md|AUDIT\.md|dashboard-audit|canonical-information-model|notebook_resp|01_evidence/i.test(content));
+  const rendered = stripScripts(readFileSync(resolve(publicRoot, f), "utf8"));
+  check(`${f}: no visitor-facing internal contract/audit/evidence filename`,
+    !/CONTRACT\.md|AUDIT\.md|dashboard-audit|canonical-information-model|notebook_resp|01_evidence/i.test(rendered));
+  check(`${f}: no visitor-facing .md filename`, !/[\w-]+\.md\b/i.test(rendered));
+  check(`${f}: no visitor-facing .csv path`, !/[\w./-]+\.csv\b/i.test(rendered));
 }
+check("dashboard's templated document-reference constants carry no .md/.csv filename",
+  !/const CODE_(AUDIT|CONTRACT|CANAL_CSV|PROGRAMA_CSV)\s*=\s*"[^"]*\.(md|csv)[^"]*"/
+    .test(surfaces["dashboard/index.html"]));
 const forbiddenNames = [
   /CONTRACT/i, /AUDIT/i, /^CASE-01\.md$/i, /^readme\.md$/i,
   /notebook_resp/i, /canonical-information-model/i, /dashboard-audit/i,

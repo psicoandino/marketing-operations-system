@@ -62,7 +62,7 @@ footer{margin-top:28px;color:var(--muted);font-size:.83rem;line-height:1.6}
 </head>
 <body>
 
-<psico-header data-shell-current="dashboard" data-shell-root="../" data-shell-lang-key="dashboard_lang" data-shell-lang-default="en">
+<psico-header data-shell-current="dashboard" data-shell-root="../" data-shell-lang-key="dashboard_lang" data-shell-lang-default="es">
   <header class="psico-header-fallback"><a class="psico-header-fallback__brand" href="../index.html">PSICOANDINO</a><nav aria-label="Primary navigation"><a href="../index.html">Home</a><a href="../case-study/index.html">Case Study</a><a href="../pipeline/index.html">Pipeline</a><a href="../dashboard/index.html" aria-current="page">Dashboard</a><a href="../cv/index.html">CV</a></nav></header>
 </psico-header>
 
@@ -71,8 +71,8 @@ footer{margin-top:28px;color:var(--muted);font-size:.83rem;line-height:1.6}
   <div class="header-row">
     <div class="kicker" id="kicker">Marketing Operations System · Dashboard View</div>
     <div class="lang-switch" role="group" aria-label="Language / Idioma">
-      <button class="lang-btn" id="langEn" data-lang="en">EN</button>
       <button class="lang-btn" id="langEs" data-lang="es">ES</button>
+      <button class="lang-btn" id="langEn" data-lang="en">EN</button>
     </div>
   </div>
   <h1 id="mainTitle">Prospect Lifecycle — Marketing Operations Dashboard</h1>
@@ -174,7 +174,7 @@ footer{margin-top:28px;color:var(--muted);font-size:.83rem;line-height:1.6}
 </section>
 
 <footer>
-  <span id="footerText"></span> <code>SYSTEM_CONTRACT_PROPOSAL.md</code>, <code>DASHBOARD_CONTRACT_PROPOSAL.md</code>, <code>DASHBOARD_BUILD_CONTRACT.md</code>.
+  <span id="footerText"></span>
   <span class="badge" id="badgeIncrement">Dashboard View</span> <span class="badge" id="badgeViews">Lifecycle Status + Acquisition → Enrollment Trend + Origin + Program Interest</span>
 </footer>
 </main>
@@ -580,7 +580,7 @@ es: {
   let LANG = (function () {
     try {
       const stored = localStorage.getItem(LANG_KEY);
-      return stored === "es" ? "es" : "en"; // English is the deterministic default
+      return stored === "en" ? "en" : "es"; // Spanish is the deterministic default
     } catch (e) { return "en"; }
   })();
   function t(key) {
@@ -598,10 +598,10 @@ es: {
     });
     return s;
   }
-  const CODE_AUDIT = "<code>dashboard-audit.md</code>";
-  const CODE_CONTRACT = "<code>DASHBOARD_BUILD_CONTRACT.md</code>";
-  const CODE_CANAL_CSV = "<code>input/canal_mapping.csv</code>";
-  const CODE_PROGRAMA_CSV = "<code>input/programa_mapping.csv</code>";
+  const CODE_AUDIT = "<em>Dashboard Audit Notes</em>";
+  const CODE_CONTRACT = "<em>Dashboard Build Contract</em>";
+  const CODE_CANAL_CSV = "<em>Canal Mapping Reference</em>";
+  const CODE_PROGRAMA_CSV = "<em>Program Mapping Reference</em>";
 
   const programaSelect = document.getElementById("filterPrograma");
   DashboardCore.distinctProgramaCodigos(consultasAll).forEach(function (code) {

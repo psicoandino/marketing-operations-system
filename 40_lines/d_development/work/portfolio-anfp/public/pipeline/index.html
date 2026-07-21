@@ -94,7 +94,7 @@ footer{margin-top:28px;color:var(--muted);font-size:.83rem;line-height:1.6}
 </head>
 <body>
 
-<psico-header data-shell-current="pipeline" data-shell-root="../" data-shell-lang-key="anfp_pipeline_lang" data-shell-lang-default="en">
+<psico-header data-shell-current="pipeline" data-shell-root="../" data-shell-lang-key="anfp_pipeline_lang" data-shell-lang-default="es">
   <header class="psico-header-fallback"><a class="psico-header-fallback__brand" href="../index.html">PSICOANDINO</a><nav aria-label="Primary navigation"><a href="../index.html">Home</a><a href="../case-study/index.html">Case Study</a><a href="../pipeline/index.html" aria-current="page">Pipeline</a><a href="../dashboard/index.html">Dashboard</a><a href="../cv/index.html">CV</a></nav></header>
 </psico-header>
 
@@ -103,8 +103,8 @@ footer{margin-top:28px;color:var(--muted);font-size:.83rem;line-height:1.6}
   <div class="header-row">
     <div class="kicker" id="kicker">Portfolio case 01 · reference implementation</div>
     <div class="lang-switch" role="group" aria-label="Language / Idioma">
-      <button class="lang-btn" id="langEn" data-lang="en">EN</button>
       <button class="lang-btn" id="langEs" data-lang="es">ES</button>
+      <button class="lang-btn" id="langEn" data-lang="en">EN</button>
     </div>
   </div>
   <h1 id="mainTitle">Multi-Source Marketing Data Pipeline</h1>
@@ -838,7 +838,7 @@ es: {
   let LANG = (function () {
     try {
       const stored = localStorage.getItem(LANG_KEY);
-      return stored === "es" ? "es" : "en"; // English is the deterministic default
+      return stored === "en" ? "en" : "es"; // Spanish is the deterministic default
     } catch (e) { return "en"; }
   })();
   function t(key) {

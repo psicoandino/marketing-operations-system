@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Marketing Operations Dashboard — Increment 1</title>
+<title>Marketing Operations Dashboard — Increment 2</title>
 <style>
 :root{
   --bg:#f5f3ec; --ink:#000; --muted:#5d625f; --line:#d8d4ca; --panel:#fff;
@@ -45,6 +45,11 @@ p{line-height:1.6;max-width:74ch}
 .bar-track{background:#ece9e1;border-radius:8px;height:22px;position:relative;overflow:hidden}
 .bar-fill{display:block;background:var(--accent);height:100%;border-radius:8px 0 0 8px}
 .estado-row .count{text-align:right;font-family:ui-monospace,Menlo,monospace;font-size:.86rem}
+.trend-table{width:100%;border-collapse:collapse;font-size:.85rem;margin:10px 0}
+.trend-table th,.trend-table td{text-align:left;padding:6px 10px;border-bottom:1px solid var(--line)}
+.trend-table th{font-size:.72rem;color:var(--muted);text-transform:uppercase;letter-spacing:.04em}
+.trend-table td.num,.trend-table th.num{text-align:right;font-family:ui-monospace,Menlo,monospace}
+.trend-table tr.totals td{font-weight:700;border-top:2px solid var(--ink);border-bottom:none}
 footer{margin-top:28px;color:var(--muted);font-size:.83rem;line-height:1.6}
 .badge{display:inline-block;border:1px solid var(--line);border-radius:999px;padding:4px 10px;font-size:.74rem;background:#fff;margin-right:6px}
 </style>
@@ -52,9 +57,9 @@ footer{margin-top:28px;color:var(--muted);font-size:.83rem;line-height:1.6}
 <body>
 <main>
 <header>
-  <div class="kicker">Marketing Operations System · Dashboard View · Increment 1</div>
+  <div class="kicker">Marketing Operations System · Dashboard View · Increment 2</div>
   <h1>Prospect Lifecycle — Marketing Operations Dashboard</h1>
-  <p>How does a prospect evolve through the operational system? This is the primary question this dashboard answers, before any aggregate marketing-operations question. This increment implements the Lifecycle Status view only; the remaining required views are scaffolded below and arrive in later increments.</p>
+  <p>How does a prospect evolve through the operational system? This is the primary question this dashboard answers, before any aggregate marketing-operations question. This increment implements the Lifecycle Status view and the Acquisition → Enrollment Trend view; the remaining two required views are scaffolded below and arrive in later increments.</p>
   <div class="disclosure">
     <strong>All data on this page is synthetic.</strong>
     The historical system this reconstructs (documented in <code>dashboard-audit.md</code>) had five specific, unresolved data anomalies: a mismatch between total leads and the sum of status counts, an unreconciled conversion percentage, a negative channel count, person names leaking into a source field, and an unconfirmed channel-grouping rule. Those anomalies are described in the project's evidence documents, not reproduced here — the numbers on this page are deliberately clean and internally consistent, per <code>DASHBOARD_BUILD_CONTRACT.md</code>. The "Canal" grouping shown here follows an explicit synthetic mapping table (visible in <code>input/canal_mapping.csv</code>), not the historical, unconfirmed production rule.
@@ -63,7 +68,7 @@ footer{margin-top:28px;color:var(--muted);font-size:.83rem;line-height:1.6}
 
 <nav class="nav" id="viewNav">
   <button class="active" data-view="lifecycle">Lifecycle Status</button>
-  <button disabled data-view="trend">Acquisition → Enrollment Trend<span class="pending">later increment</span></button>
+  <button data-view="trend">Acquisition → Enrollment Trend</button>
   <button disabled data-view="origin">Origin<span class="pending">later increment</span></button>
   <button disabled data-view="program">Program Interest<span class="pending">later increment</span></button>
 </nav>
@@ -83,7 +88,7 @@ footer{margin-top:28px;color:var(--muted);font-size:.83rem;line-height:1.6}
   </div>
 </div>
 
-<section class="card">
+<section class="card" id="view-lifecycle">
   <div class="stats">
     <div class="stat"><span class="lbl">Leads</span><strong id="statLeads">0</strong><span class="formula">count of Consulta records</span></div>
     <div class="stat"><span class="lbl">Matrículas</span><strong id="statMatriculas">0</strong><span class="formula">count of Matrícula records</span></div>
@@ -96,8 +101,19 @@ footer{margin-top:28px;color:var(--muted);font-size:.83rem;line-height:1.6}
   <p class="note" id="reconcileNote"></p>
 </section>
 
+<section class="card" id="view-trend" hidden>
+  <h2>Acquisition → Enrollment Trend</h2>
+  <p class="note">Leads generated and enrollments confirmed per day, at daily grain, for the current filter. Same Consulta and Matrícula records as Lifecycle Status — grouped by date instead of by status.</p>
+  <table class="trend-table">
+    <thead><tr><th>Date</th><th class="num">Leads</th><th class="num">Matrículas</th></tr></thead>
+    <tbody id="trendBody"></tbody>
+    <tfoot><tr class="totals"><td>Total</td><td class="num" id="trendTotalLeads">0</td><td class="num" id="trendTotalMatriculas">0</td></tr></tfoot>
+  </table>
+  <p class="note" id="trendReconcileNote"></p>
+</section>
+
 <footer>
-  Reconstructed reference implementation — the second public view of the Marketing Operations System (<code>SYSTEM_CONTRACT_PROPOSAL.md</code>, <code>DASHBOARD_CONTRACT_PROPOSAL.md</code>, <code>DASHBOARD_BUILD_CONTRACT.md</code>). Not the historical production system. Processing occurs locally in the browser. <span class="badge">Increment 1 of the Dashboard View</span> <span class="badge">Lifecycle Status view only</span>
+  Reconstructed reference implementation — the second public view of the Marketing Operations System (<code>SYSTEM_CONTRACT_PROPOSAL.md</code>, <code>DASHBOARD_CONTRACT_PROPOSAL.md</code>, <code>DASHBOARD_BUILD_CONTRACT.md</code>). Not the historical production system. Processing occurs locally in the browser. <span class="badge">Increment 2 of the Dashboard View</span> <span class="badge">Lifecycle Status + Acquisition → Enrollment Trend</span>
 </footer>
 </main>
 
@@ -156,9 +172,11 @@ referido_interno,Referidos
 /* __DASHBOARD_CORE_START__ */
 /* Pure data logic: no DOM. Mirrors the canonical entities of
    canonical-information-model.md (Consulta, Matrícula, Estado de consulta,
-   Canal/Origen) at the scope required by DASHBOARD_BUILD_CONTRACT.md
-   Increment 1 (Lifecycle Status view only). Synthetic data — no
-   external source, no network access. */
+   Canal/Origen) at the scope required by DASHBOARD_BUILD_CONTRACT.md.
+   Shared, single data model for every view (Lifecycle Status, Acquisition →
+   Enrollment Trend, and later increments) — no duplicated parsing, filtering
+   or ratio logic per view. Synthetic data — no external source, no network
+   access. */
 const DashboardCore = (function () {
   "use strict";
 
@@ -274,6 +292,22 @@ const DashboardCore = (function () {
     return map;
   }
 
+  // Daily-grain acquisition-to-enrollment trend. Partitions the same
+  // filtered `consultas`/`matriculas` arrays used by the Lifecycle Status
+  // view by date, so per-day sums always reconcile exactly to
+  // leadsCount()/matriculasCount() on those same arrays — no separate
+  // formula, no separate filter pass.
+  function dailyTrend(consultas, matriculas) {
+    const days = {};
+    function bucket(fecha) {
+      if (!days[fecha]) days[fecha] = { fecha: fecha, leads: 0, matriculas: 0 };
+      return days[fecha];
+    }
+    consultas.forEach(function (r) { bucket(r.fecha).leads++; });
+    matriculas.forEach(function (r) { bucket(r.fecha_matricula).matriculas++; });
+    return Object.keys(days).sort().map(function (k) { return days[k]; });
+  }
+
   return {
     ESTADOS: ESTADOS,
     parseCsv: parseCsv,
@@ -285,7 +319,8 @@ const DashboardCore = (function () {
     estadoCounts: estadoCounts,
     distinctProgramaCodigos: distinctProgramaCodigos,
     canalCounts: canalCounts,
-    buildCanalMap: buildCanalMap
+    buildCanalMap: buildCanalMap,
+    dailyTrend: dailyTrend
   };
 })();
 /* __DASHBOARD_CORE_END__ */
@@ -326,7 +361,10 @@ const DashboardCore = (function () {
     };
   }
 
-  function render() {
+  // Unchanged from Increment 1: same computation, same DOM ids, same
+  // reconciliation note. Only the function name changed (render ->
+  // renderLifecycle) so it can be called alongside renderTrend().
+  function renderLifecycle() {
     const opts = currentFilters();
     const consultas = DashboardCore.filterConsultas(consultasAll, opts);
     const matriculas = DashboardCore.filterMatriculas(matriculasAll, opts);
@@ -360,21 +398,71 @@ const DashboardCore = (function () {
     const sumEstados = Object.values(counts).reduce(function (a, b) { return a + b; }, 0);
     document.getElementById("reconcileNote").textContent =
       "Sum of status counts (" + sumEstados + ") equals Leads (" + leads + ") for the current filter — reconciled by construction, per DASHBOARD_BUILD_CONTRACT.md.";
+
+    return { leads: leads, mats: mats, conv: conv };
   }
 
-  programaSelect.addEventListener("change", render);
-  document.getElementById("filterStart").addEventListener("change", render);
-  document.getElementById("filterEnd").addEventListener("change", render);
+  // Increment 2: same filtered arrays as renderLifecycle, same
+  // DashboardCore.leadsCount/matriculasCount/conversionRatio — grouped by
+  // day instead of by status. No separate data model, no separate filter
+  // logic, no separate conversion formula.
+  function renderTrend(lifecycleTotals) {
+    const opts = currentFilters();
+    const consultas = DashboardCore.filterConsultas(consultasAll, opts);
+    const matriculas = DashboardCore.filterMatriculas(matriculasAll, opts);
+    const trend = DashboardCore.dailyTrend(consultas, matriculas);
 
-  // Scaffolded nav: only the Lifecycle Status view is implemented in this
-  // increment. The other three buttons are disabled, not fake — clicking
-  // is a no-op because there is nothing yet to switch to.
+    const tbody = document.getElementById("trendBody");
+    tbody.innerHTML = "";
+    let sumLeads = 0, sumMats = 0;
+    trend.forEach(function (d) {
+      sumLeads += d.leads;
+      sumMats += d.matriculas;
+      const tr = document.createElement("tr");
+      tr.innerHTML =
+        "<td>" + esc(d.fecha) + "</td>" +
+        "<td class='num'>" + d.leads + "</td>" +
+        "<td class='num'>" + d.matriculas + "</td>";
+      tbody.appendChild(tr);
+    });
+    document.getElementById("trendTotalLeads").textContent = sumLeads;
+    document.getElementById("trendTotalMatriculas").textContent = sumMats;
+
+    document.getElementById("trendReconcileNote").textContent =
+      "Daily totals reconcile exactly with Lifecycle Status for the current filter: Leads " +
+      lifecycleTotals.leads + " (table sum " + sumLeads + "), Matrículas " +
+      lifecycleTotals.mats + " (table sum " + sumMats + "), Conversion % " +
+      (lifecycleTotals.conv * 100).toFixed(1) + "% = Matrículas ÷ Leads, same formula as Lifecycle Status.";
+  }
+
+  function renderAll() {
+    const totals = renderLifecycle();
+    renderTrend(totals);
+  }
+
+  programaSelect.addEventListener("change", renderAll);
+  document.getElementById("filterStart").addEventListener("change", renderAll);
+  document.getElementById("filterEnd").addEventListener("change", renderAll);
+
+  // View switching: exactly one view section visible at a time. Lifecycle
+  // Status and Acquisition → Enrollment Trend are implemented and
+  // clickable; Origin and Program Interest remain disabled scaffolding —
+  // clicking them is a no-op because there is nothing yet to switch to.
   document.getElementById("viewNav").addEventListener("click", function (e) {
-    const btn = e.target.closest("button[data-view='lifecycle']");
-    if (btn) render();
+    const btn = e.target.closest(".nav button:not([disabled])");
+    if (!btn) return;
+    const view = btn.dataset.view;
+    document.querySelectorAll(".nav button").forEach(function (b) {
+      b.classList.toggle("active", b === btn);
+    });
+    const lifecycleSection = document.getElementById("view-lifecycle");
+    const trendSection = document.getElementById("view-trend");
+    lifecycleSection.hidden = view !== "lifecycle";
+    trendSection.hidden = view !== "trend";
+    renderAll();
   });
 
-  render();
+  renderAll();
 })();
 </script>
 </body>

@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Marketing Operations Dashboard — Increment 4</title>
+<title>Marketing Operations Dashboard — Increment 5</title>
 <style>
 :root{
   --bg:#f5f3ec; --ink:#000; --muted:#5d625f; --line:#d8d4ca; --panel:#fff;
@@ -52,17 +52,27 @@ p{line-height:1.6;max-width:74ch}
 .trend-table tr.totals td{font-weight:700;border-top:2px solid var(--ink);border-bottom:none}
 footer{margin-top:28px;color:var(--muted);font-size:.83rem;line-height:1.6}
 .badge{display:inline-block;border:1px solid var(--line);border-radius:999px;padding:4px 10px;font-size:.74rem;background:#fff;margin-right:6px}
+.header-row{display:flex;justify-content:space-between;align-items:flex-start;gap:16px;flex-wrap:wrap}
+.lang-switch{display:flex;gap:2px;border:1px solid var(--line);border-radius:999px;padding:3px;background:rgba(255,255,255,.7)}
+.lang-btn{border:0;background:transparent;border-radius:999px;padding:5px 13px;font-size:.78rem;font-weight:700;cursor:pointer;color:var(--muted);font-family:inherit}
+.lang-btn.active{background:var(--ink);color:#fff}
 </style>
 </head>
 <body>
 <main>
 <header>
-  <div class="kicker">Marketing Operations System · Dashboard View · Increment 4</div>
-  <h1>Prospect Lifecycle — Marketing Operations Dashboard</h1>
-  <p>How does a prospect evolve through the operational system? This is the primary question this dashboard answers, before any aggregate marketing-operations question. This increment implements all four required views: Lifecycle Status, Acquisition → Enrollment Trend, Origin, and Program Interest.</p>
-  <div class="disclosure">
-    <strong>All data on this page is synthetic.</strong>
-    The historical system this reconstructs (documented in <code>dashboard-audit.md</code>) had five specific, unresolved data anomalies: a mismatch between total leads and the sum of status counts, an unreconciled conversion percentage, a negative channel count, person names leaking into a source field, and an unconfirmed channel-grouping rule. Those anomalies are described in the project's evidence documents, not reproduced here — the numbers on this page are deliberately clean and internally consistent, per <code>DASHBOARD_BUILD_CONTRACT.md</code>. The "Canal" grouping shown here follows an explicit synthetic mapping table (visible in <code>input/canal_mapping.csv</code>), not the historical, unconfirmed production rule.
+  <div class="header-row">
+    <div class="kicker" id="kicker">Marketing Operations System · Dashboard View · Increment 5</div>
+    <div class="lang-switch" role="group" aria-label="Language / Idioma">
+      <button class="lang-btn" id="langEn" data-lang="en">EN</button>
+      <button class="lang-btn" id="langEs" data-lang="es">ES</button>
+    </div>
+  </div>
+  <h1 id="mainTitle">Prospect Lifecycle — Marketing Operations Dashboard</h1>
+  <p id="subtitle">How does a prospect evolve through the operational system? This is the primary question this dashboard answers, before any aggregate marketing-operations question. This increment implements all four required views: Lifecycle Status, Acquisition → Enrollment Trend, Origin, and Program Interest.</p>
+  <div class="disclosure" id="disclosureBox">
+    <strong id="disclosureStrong">All data on this page is synthetic.</strong>
+    <span id="disclosureRest"></span>
   </div>
 </header>
 
@@ -75,89 +85,90 @@ footer{margin-top:28px;color:var(--muted);font-size:.83rem;line-height:1.6}
 
 <div class="filters">
   <div>
-    <label for="filterPrograma">Program code</label>
-    <select id="filterPrograma"><option value="">All</option></select>
+    <label for="filterPrograma" id="lblPrograma">Program code</label>
+    <select id="filterPrograma"><option value="" id="optAll">All</option></select>
   </div>
   <div>
-    <label for="filterStart">From</label>
+    <label for="filterStart" id="lblFrom">From</label>
     <input type="date" id="filterStart" value="2025-08-01">
   </div>
   <div>
-    <label for="filterEnd">To</label>
+    <label for="filterEnd" id="lblTo">To</label>
     <input type="date" id="filterEnd" value="2025-08-31">
   </div>
 </div>
 
 <section class="card" id="view-lifecycle">
   <div class="stats">
-    <div class="stat"><span class="lbl">Leads</span><strong id="statLeads">0</strong><span class="formula">count of Consulta records</span></div>
-    <div class="stat"><span class="lbl">Matrículas</span><strong id="statMatriculas">0</strong><span class="formula">count of Matrícula records</span></div>
-    <div class="stat"><span class="lbl">Conversion %</span><strong id="statConversion">0%</strong><span class="formula">Matrículas ÷ Leads</span></div>
+    <div class="stat"><span class="lbl" id="statLeadsLbl">Leads</span><strong id="statLeads">0</strong><span class="formula" id="statLeadsFormula">count of Consulta records</span></div>
+    <div class="stat"><span class="lbl" id="statMatriculasLbl">Matrículas</span><strong id="statMatriculas">0</strong><span class="formula" id="statMatriculasFormula">count of Matrícula records</span></div>
+    <div class="stat"><span class="lbl" id="statConversionLbl">Conversion %</span><strong id="statConversion">0%</strong><span class="formula" id="statConversionFormula">Matrículas ÷ Leads</span></div>
   </div>
 
-  <h2>Lifecycle Status</h2>
-  <p class="note">Where prospects currently sit across the status set. This is a status/state set, <strong>not a sequential funnel</strong> — some states are terminal (<span class="tag tag-terminal">terminal</span>), at least one is reversible (<span class="tag tag-reversible">reversible</span>), and a prospect is not guaranteed to pass through every state.</p>
+  <h2 id="lifecycleTitle">Lifecycle Status</h2>
+  <p class="note" id="lifecycleNote"></p>
   <div class="estado-list" id="estadoList"></div>
   <p class="note" id="reconcileNote"></p>
 </section>
 
 <section class="card" id="view-trend" hidden>
-  <h2>Acquisition → Enrollment Trend</h2>
-  <p class="note">Leads generated and enrollments confirmed per day, at daily grain, for the current filter. Same Consulta and Matrícula records as Lifecycle Status — grouped by date instead of by status.</p>
+  <h2 id="trendTitle">Acquisition → Enrollment Trend</h2>
+  <p class="note" id="trendNote">Leads generated and enrollments confirmed per day, at daily grain, for the current filter. Same Consulta and Matrícula records as Lifecycle Status — grouped by date instead of by status.</p>
   <table class="trend-table">
-    <thead><tr><th>Date</th><th class="num">Leads</th><th class="num">Matrículas</th></tr></thead>
+    <thead><tr><th id="thDate">Date</th><th class="num" id="thTrendLeads">Leads</th><th class="num" id="thTrendMatriculas">Matrículas</th></tr></thead>
     <tbody id="trendBody"></tbody>
-    <tfoot><tr class="totals"><td>Total</td><td class="num" id="trendTotalLeads">0</td><td class="num" id="trendTotalMatriculas">0</td></tr></tfoot>
+    <tfoot><tr class="totals"><td id="trendTotalLabel">Total</td><td class="num" id="trendTotalLeads">0</td><td class="num" id="trendTotalMatriculas">0</td></tr></tfoot>
   </table>
   <p class="note" id="trendReconcileNote"></p>
 </section>
 
 <section class="card" id="view-origin" hidden>
-  <h2>Origin</h2>
-  <p class="note">Where prospects entering the lifecycle came from, for the current filter — at the Canal (channel) level and the granular Formulario/Origen level. Same Consulta records as Lifecycle Status and Trend, grouped by acquisition source instead of by status or date.</p>
-  <p class="note"><strong>Canal is a synthetic, documented grouping</strong> (see <code>input/canal_mapping.csv</code>) — a demo convention, not a reproduction of the historical, unconfirmed production channel-grouping rule described in <code>dashboard-audit.md</code>.</p>
-  <h3>Canal</h3>
+  <h2 id="originTitle">Origin</h2>
+  <p class="note" id="originNote1">Where prospects entering the lifecycle came from, for the current filter — at the Canal (channel) level and the granular Formulario/Origen level. Same Consulta records as Lifecycle Status and Trend, grouped by acquisition source instead of by status or date.</p>
+  <p class="note" id="originNote2"></p>
+  <h3 id="canalHeading">Canal</h3>
   <table class="trend-table">
-    <thead><tr><th>Canal</th><th class="num">Leads</th></tr></thead>
+    <thead><tr><th id="thCanal">Canal</th><th class="num" id="thCanalLeads">Leads</th></tr></thead>
     <tbody id="canalBody"></tbody>
-    <tfoot><tr class="totals"><td>Total</td><td class="num" id="canalTotal">0</td></tr></tfoot>
+    <tfoot><tr class="totals"><td id="canalTotalLabel">Total</td><td class="num" id="canalTotal">0</td></tr></tfoot>
   </table>
-  <h3>Formulario / Origen</h3>
+  <h3 id="formularioHeading">Formulario / Origen</h3>
   <table class="trend-table">
-    <thead><tr><th>Formulario / Origen</th><th>Canal</th><th class="num">Leads</th></tr></thead>
+    <thead><tr><th id="thFormularioOrigen">Formulario / Origen</th><th id="thFormularioCanal">Canal</th><th class="num" id="thFormularioLeads">Leads</th></tr></thead>
     <tbody id="originBody"></tbody>
-    <tfoot><tr class="totals"><td>Total</td><td></td><td class="num" id="originTotal">0</td></tr></tfoot>
+    <tfoot><tr class="totals"><td id="originTotalLabel">Total</td><td></td><td class="num" id="originTotal">0</td></tr></tfoot>
   </table>
   <p class="note" id="originReconcileNote"></p>
 </section>
 
 <section class="card" id="view-program" hidden>
-  <h2>Program Interest</h2>
-  <p class="note">Demand for programs, for the current filter — at the Área, Programa and Versión/Código levels of the confirmed program hierarchy. Same Consulta records as the other three views, grouped by what a prospect is interested in instead of by status, date, or acquisition source.</p>
-  <p class="note"><strong>Área/Programa are a synthetic, documented hierarchy</strong> (see <code>input/programa_mapping.csv</code>) built on top of the same <code>programa_codigo</code> values used everywhere else in this dashboard — not a reproduction of any historical catalog.</p>
-  <h3>Área</h3>
+  <h2 id="programTitle">Program Interest</h2>
+  <p class="note" id="programNote1">Demand for programs, for the current filter — at the Área, Programa and Versión/Código levels of the confirmed program hierarchy. Same Consulta records as the other three views, grouped by what a prospect is interested in instead of by status, date, or acquisition source.</p>
+  <p class="note" id="programNote2"></p>
+  <h3 id="areaHeading">Área</h3>
   <table class="trend-table">
-    <thead><tr><th>Área</th><th class="num">Leads</th></tr></thead>
+    <thead><tr><th id="thArea">Área</th><th class="num" id="thAreaLeads">Leads</th></tr></thead>
     <tbody id="areaBody"></tbody>
-    <tfoot><tr class="totals"><td>Total</td><td class="num" id="areaTotal">0</td></tr></tfoot>
+    <tfoot><tr class="totals"><td id="areaTotalLabel">Total</td><td class="num" id="areaTotal">0</td></tr></tfoot>
   </table>
-  <h3>Programa</h3>
+  <h3 id="programaHeading">Programa</h3>
   <table class="trend-table">
-    <thead><tr><th>Programa</th><th>Área</th><th class="num">Leads</th></tr></thead>
+    <thead><tr><th id="thPrograma">Programa</th><th id="thProgramaArea">Área</th><th class="num" id="thProgramaLeads">Leads</th></tr></thead>
     <tbody id="programaBody"></tbody>
-    <tfoot><tr class="totals"><td>Total</td><td></td><td class="num" id="programaTotal">0</td></tr></tfoot>
+    <tfoot><tr class="totals"><td id="programaTotalLabel">Total</td><td></td><td class="num" id="programaTotal">0</td></tr></tfoot>
   </table>
-  <h3>Versión / Código</h3>
+  <h3 id="codigoHeading">Versión / Código</h3>
   <table class="trend-table">
-    <thead><tr><th>Código</th><th>Programa</th><th class="num">Leads</th></tr></thead>
+    <thead><tr><th id="thCodigo">Código</th><th id="thCodigoPrograma">Programa</th><th class="num" id="thCodigoLeads">Leads</th></tr></thead>
     <tbody id="codigoBody"></tbody>
-    <tfoot><tr class="totals"><td>Total</td><td></td><td class="num" id="codigoTotal">0</td></tr></tfoot>
+    <tfoot><tr class="totals"><td id="codigoTotalLabel">Total</td><td></td><td class="num" id="codigoTotal">0</td></tr></tfoot>
   </table>
   <p class="note" id="programReconcileNote"></p>
 </section>
 
 <footer>
-  Reconstructed reference implementation — the second public view of the Marketing Operations System (<code>SYSTEM_CONTRACT_PROPOSAL.md</code>, <code>DASHBOARD_CONTRACT_PROPOSAL.md</code>, <code>DASHBOARD_BUILD_CONTRACT.md</code>). Not the historical production system. Processing occurs locally in the browser. <span class="badge">Increment 4 of the Dashboard View</span> <span class="badge">Lifecycle Status + Acquisition → Enrollment Trend + Origin + Program Interest</span>
+  <span id="footerText"></span> <code>SYSTEM_CONTRACT_PROPOSAL.md</code>, <code>DASHBOARD_CONTRACT_PROPOSAL.md</code>, <code>DASHBOARD_BUILD_CONTRACT.md</code>.
+  <span class="badge" id="badgeIncrement">Increment 5 of the Dashboard View</span> <span class="badge" id="badgeViews">Lifecycle Status + Acquisition → Enrollment Trend + Origin + Program Interest</span>
 </footer>
 </main>
 
@@ -419,6 +430,129 @@ const DashboardCore = (function () {
 </script>
 
 <script>
+/* __I18N_DICT_START__ */
+/* Single centralized translation dictionary for the whole dashboard.
+   English is the deterministic default. Canonical business/domain values
+   (Estado names, Canal names, Programa/Área names, programa_codigo,
+   formulario_origen tags) are data, not UI chrome, and are never looked up
+   here — they render identically regardless of language, per
+   DASHBOARD_BUILD_CONTRACT.md. */
+const I18N = {
+en: {
+  kicker: "Marketing Operations System · Dashboard View · Increment 5",
+  mainTitle: "Prospect Lifecycle — Marketing Operations Dashboard",
+  subtitle: "How does a prospect evolve through the operational system? This is the primary question this dashboard answers, before any aggregate marketing-operations question. This increment implements all four required views: Lifecycle Status, Acquisition → Enrollment Trend, Origin, and Program Interest.",
+  disclosureStrong: "All data on this page is synthetic.",
+  disclosureRest: "The historical system this reconstructs (documented in {{audit}}) had five specific, unresolved data anomalies: a mismatch between total leads and the sum of status counts, an unreconciled conversion percentage, a negative channel count, person names leaking into a source field, and an unconfirmed channel-grouping rule. Those anomalies are described in the project's evidence documents, not reproduced here — the numbers on this page are deliberately clean and internally consistent, per {{contract}}. The \"Canal\" grouping shown here follows an explicit synthetic mapping table (visible in {{canalcsv}}), not the historical, unconfirmed production rule.",
+  navLifecycle: "Lifecycle Status",
+  navTrend: "Acquisition → Enrollment Trend",
+  navOrigin: "Origin",
+  navProgram: "Program Interest",
+  filterProgramLabel: "Program code",
+  filterFromLabel: "From",
+  filterToLabel: "To",
+  filterAllOption: "All",
+  statLeadsLabel: "Leads",
+  statLeadsFormula: "count of Consulta records",
+  statMatriculasLabel: "Matrículas",
+  statMatriculasFormula: "count of Matrícula records",
+  statConversionLabel: "Conversion %",
+  statConversionFormula: "Matrículas ÷ Leads",
+  lifecycleTitle: "Lifecycle Status",
+  lifecycleNote: "Where prospects currently sit across the status set. This is a status/state set, <strong>not a sequential funnel</strong> — some states are terminal ({{terminal}}), at least one is reversible ({{reversible}}), and a prospect is not guaranteed to pass through every state.",
+  tagTerminalWord: "terminal",
+  tagReversibleWord: "reversible",
+  lifecycleReconcile: "Sum of status counts ({{sum}}) equals Leads ({{leads}}) for the current filter — reconciled by construction, per {{contract}}.",
+  trendTitle: "Acquisition → Enrollment Trend",
+  trendNote: "Leads generated and enrollments confirmed per day, at daily grain, for the current filter. Same Consulta and Matrícula records as Lifecycle Status — grouped by date instead of by status.",
+  thDate: "Date",
+  thLeadsCol: "Leads",
+  thMatriculasCol: "Matrículas",
+  totalLabel: "Total",
+  trendReconcile: "Daily totals reconcile exactly with Lifecycle Status for the current filter: Leads {{leads}} (table sum {{sumLeads}}), Matrículas {{mats}} (table sum {{sumMats}}), Conversion % {{conv}} = Matrículas ÷ Leads, same formula as Lifecycle Status.",
+  originTitle: "Origin",
+  originNote1: "Where prospects entering the lifecycle came from, for the current filter — at the Canal (channel) level and the granular Formulario/Origen level. Same Consulta records as Lifecycle Status and Trend, grouped by acquisition source instead of by status or date.",
+  originNote2: "<strong>Canal is a synthetic, documented grouping</strong> (see {{canalcsv}}) — a demo convention, not a reproduction of the historical, unconfirmed production channel-grouping rule described in {{audit}}.",
+  canalHeading: "Canal",
+  thCanal: "Canal",
+  formularioHeading: "Formulario / Origen",
+  thFormularioOrigen: "Formulario / Origen",
+  thCanalCol: "Canal",
+  originReconcile: "Canal total ({{canalSum}}) and Formulario/Origen total ({{originSum}}) both equal Leads ({{leads}}) for the current filter — reconciled by construction: every origin maps to exactly one documented synthetic Canal ({{canalcsv}}), per {{contract}}.",
+  programTitle: "Program Interest",
+  programNote1: "Demand for programs, for the current filter — at the Área, Programa and Versión/Código levels of the confirmed program hierarchy. Same Consulta records as the other three views, grouped by what a prospect is interested in instead of by status, date, or acquisition source.",
+  programNote2: "<strong>Área/Programa are a synthetic, documented hierarchy</strong> (see {{programacsv}}) built on top of the same programa_codigo values used everywhere else in this dashboard — not a reproduction of any historical catalog.",
+  areaHeading: "Área",
+  programaHeading: "Programa",
+  codigoHeading: "Versión / Código",
+  thArea: "Área",
+  thPrograma: "Programa",
+  thCodigo: "Código",
+  programReconcile: "Área total ({{areaSum}}), Programa total ({{programaSum}}) and Código total ({{codigoSum}}) all equal Leads ({{leads}}) for the current filter — reconciled by construction: every código maps to exactly one programa, and every programa to exactly one área ({{programacsv}}), per {{contract}}.",
+  footerText: "Reconstructed reference implementation — the second public view of the Marketing Operations System.",
+  badgeIncrement: "Increment 5 of the Dashboard View",
+  badgeViews: "Lifecycle Status + Acquisition → Enrollment Trend + Origin + Program Interest"
+},
+es: {
+  kicker: "Sistema de Operaciones de Marketing · Vista de Dashboard · Incremento 5",
+  mainTitle: "Ciclo de Vida del Prospecto — Dashboard de Operaciones de Marketing",
+  subtitle: "¿Cómo evoluciona un prospecto a través del sistema operacional? Esta es la pregunta principal que responde este dashboard, antes que cualquier pregunta agregada sobre operaciones de marketing. Este incremento implementa las cuatro vistas requeridas: Estado del Ciclo de Vida, Tendencia de Adquisición → Matrícula, Origen, e Interés por Programa.",
+  disclosureStrong: "Todos los datos de esta página son sintéticos.",
+  disclosureRest: "El sistema histórico que esta página reconstruye (documentado en {{audit}}) presentaba cinco anomalías de datos específicas y no resueltas: un desajuste entre el total de leads y la suma de los conteos por estado, un porcentaje de conversión no reconciliado, un conteo de canal negativo, nombres de personas filtrados en un campo de origen, y una regla de agrupación de canal no confirmada. Esas anomalías están descritas en los documentos de evidencia del proyecto, no reproducidas aquí — las cifras de esta página son deliberadamente limpias e internamente consistentes, según {{contract}}. La agrupación \"Canal\" que se muestra aquí sigue una tabla de mapeo sintético explícita (visible en {{canalcsv}}), no la regla de producción histórica sin confirmar.",
+  navLifecycle: "Estado del Ciclo de Vida",
+  navTrend: "Tendencia de Adquisición → Matrícula",
+  navOrigin: "Origen",
+  navProgram: "Interés por Programa",
+  filterProgramLabel: "Código de programa",
+  filterFromLabel: "Desde",
+  filterToLabel: "Hasta",
+  filterAllOption: "Todos",
+  statLeadsLabel: "Leads",
+  statLeadsFormula: "conteo de registros de Consulta",
+  statMatriculasLabel: "Matrículas",
+  statMatriculasFormula: "conteo de registros de Matrícula",
+  statConversionLabel: "Conversión %",
+  statConversionFormula: "Matrículas ÷ Leads",
+  lifecycleTitle: "Estado del Ciclo de Vida",
+  lifecycleNote: "Dónde se ubican actualmente los prospectos dentro del conjunto de estados. Esto es un conjunto de estados, <strong>no un embudo secuencial</strong> — algunos estados son terminales ({{terminal}}), al menos uno es reversible ({{reversible}}), y no está garantizado que un prospecto pase por todos los estados.",
+  tagTerminalWord: "terminal",
+  tagReversibleWord: "reversible",
+  lifecycleReconcile: "La suma de los conteos por estado ({{sum}}) es igual a Leads ({{leads}}) para el filtro actual — reconciliado por construcción, según {{contract}}.",
+  trendTitle: "Tendencia de Adquisición → Matrícula",
+  trendNote: "Leads generados y matrículas confirmadas por día, a nivel diario, para el filtro actual. Los mismos registros de Consulta y Matrícula que en Estado del Ciclo de Vida — agrupados por fecha en vez de por estado.",
+  thDate: "Fecha",
+  thLeadsCol: "Leads",
+  thMatriculasCol: "Matrículas",
+  totalLabel: "Total",
+  trendReconcile: "Los totales diarios reconcilian exactamente con Estado del Ciclo de Vida para el filtro actual: Leads {{leads}} (suma de la tabla {{sumLeads}}), Matrículas {{mats}} (suma de la tabla {{sumMats}}), Conversión % {{conv}} = Matrículas ÷ Leads, misma fórmula que Estado del Ciclo de Vida.",
+  originTitle: "Origen",
+  originNote1: "De dónde provienen los prospectos que entran al ciclo de vida, para el filtro actual — a nivel de Canal y a nivel granular de Formulario/Origen. Los mismos registros de Consulta que en Estado del Ciclo de Vida y Tendencia, agrupados por fuente de adquisición en vez de por estado o fecha.",
+  originNote2: "<strong>Canal es una agrupación sintética y documentada</strong> (ver {{canalcsv}}) — una convención de la demo, no una reproducción de la regla de agrupación de canal de producción histórica sin confirmar, descrita en {{audit}}.",
+  canalHeading: "Canal",
+  thCanal: "Canal",
+  formularioHeading: "Formulario / Origen",
+  thFormularioOrigen: "Formulario / Origen",
+  thCanalCol: "Canal",
+  originReconcile: "El total de Canal ({{canalSum}}) y el total de Formulario/Origen ({{originSum}}) son iguales a Leads ({{leads}}) para el filtro actual — reconciliado por construcción: cada origen se mapea a exactamente un Canal sintético documentado ({{canalcsv}}), según {{contract}}.",
+  programTitle: "Interés por Programa",
+  programNote1: "Demanda por programas, para el filtro actual — a nivel de Área, Programa y Versión/Código de la jerarquía de programas confirmada. Los mismos registros de Consulta que en las otras tres vistas, agrupados según el interés del prospecto en vez de por estado, fecha o fuente de adquisición.",
+  programNote2: "<strong>Área/Programa son una jerarquía sintética y documentada</strong> (ver {{programacsv}}) construida sobre los mismos valores de programa_codigo usados en el resto de este dashboard — no es una reproducción de ningún catálogo histórico.",
+  areaHeading: "Área",
+  programaHeading: "Programa",
+  codigoHeading: "Versión / Código",
+  thArea: "Área",
+  thPrograma: "Programa",
+  thCodigo: "Código",
+  programReconcile: "El total de Área ({{areaSum}}), el total de Programa ({{programaSum}}) y el total de Código ({{codigoSum}}) son iguales a Leads ({{leads}}) para el filtro actual — reconciliado por construcción: cada código se mapea a exactamente un programa, y cada programa a exactamente una área ({{programacsv}}), según {{contract}}.",
+  footerText: "Implementación de referencia reconstruida — la segunda vista pública del Sistema de Operaciones de Marketing.",
+  badgeIncrement: "Incremento 5 de la Vista de Dashboard",
+  badgeViews: "Estado del Ciclo de Vida + Tendencia de Adquisición → Matrícula + Origen + Interés por Programa"
+}
+};
+/* __I18N_DICT_END__ */
+</script>
+
+<script>
 /* ---------------- UI layer (DOM only; all logic lives in DashboardCore) ---------------- */
 (function () {
   "use strict";
@@ -434,6 +568,34 @@ const DashboardCore = (function () {
   const programaRows = DashboardCore.parseCsv(embeddedCsv("csv-programa"));
   const programaMap = DashboardCore.buildProgramaMap(programaRows);
 
+  // ---------- language state ----------
+  const LANG_KEY = "dashboard_lang";
+  let LANG = (function () {
+    try {
+      const stored = localStorage.getItem(LANG_KEY);
+      return stored === "es" ? "es" : "en"; // English is the deterministic default
+    } catch (e) { return "en"; }
+  })();
+  function t(key) {
+    const d = I18N[LANG] || I18N.en;
+    if (Object.prototype.hasOwnProperty.call(d, key)) return d[key];
+    return I18N.en[key] !== undefined ? I18N.en[key] : key;
+  }
+  // Fills {{token}} placeholders in a translated string with fixed,
+  // never-translated fragments (file names, numbers) — the translation
+  // stays natural prose while literal identifiers never change per language.
+  function tpl(key, vars) {
+    let s = t(key);
+    Object.keys(vars || {}).forEach(function (k) {
+      s = s.split("{{" + k + "}}").join(String(vars[k]));
+    });
+    return s;
+  }
+  const CODE_AUDIT = "<code>dashboard-audit.md</code>";
+  const CODE_CONTRACT = "<code>DASHBOARD_BUILD_CONTRACT.md</code>";
+  const CODE_CANAL_CSV = "<code>input/canal_mapping.csv</code>";
+  const CODE_PROGRAMA_CSV = "<code>input/programa_mapping.csv</code>";
+
   const programaSelect = document.getElementById("filterPrograma");
   DashboardCore.distinctProgramaCodigos(consultasAll).forEach(function (code) {
     const opt = document.createElement("option");
@@ -446,6 +608,89 @@ const DashboardCore = (function () {
       return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#039;" }[c];
     });
   }
+
+  // Static chrome that doesn't depend on filters/data — re-run whenever the
+  // language changes. Filters, navigation state, and computed totals are
+  // untouched by this function.
+  function renderChrome() {
+    document.documentElement.lang = LANG;
+    document.getElementById("kicker").textContent = t("kicker");
+    document.getElementById("mainTitle").textContent = t("mainTitle");
+    document.getElementById("subtitle").textContent = t("subtitle");
+    document.getElementById("disclosureStrong").textContent = t("disclosureStrong");
+    document.getElementById("disclosureRest").innerHTML = tpl("disclosureRest", {
+      audit: CODE_AUDIT, contract: CODE_CONTRACT, canalcsv: CODE_CANAL_CSV
+    });
+    document.querySelector('.nav button[data-view="lifecycle"]').textContent = t("navLifecycle");
+    document.querySelector('.nav button[data-view="trend"]').textContent = t("navTrend");
+    document.querySelector('.nav button[data-view="origin"]').textContent = t("navOrigin");
+    document.querySelector('.nav button[data-view="program"]').textContent = t("navProgram");
+    document.getElementById("lblPrograma").textContent = t("filterProgramLabel");
+    document.getElementById("optAll").textContent = t("filterAllOption");
+    document.getElementById("lblFrom").textContent = t("filterFromLabel");
+    document.getElementById("lblTo").textContent = t("filterToLabel");
+    document.getElementById("statLeadsLbl").textContent = t("statLeadsLabel");
+    document.getElementById("statLeadsFormula").textContent = t("statLeadsFormula");
+    document.getElementById("statMatriculasLbl").textContent = t("statMatriculasLabel");
+    document.getElementById("statMatriculasFormula").textContent = t("statMatriculasFormula");
+    document.getElementById("statConversionLbl").textContent = t("statConversionLabel");
+    document.getElementById("statConversionFormula").textContent = t("statConversionFormula");
+    document.getElementById("lifecycleTitle").textContent = t("lifecycleTitle");
+    document.getElementById("lifecycleNote").innerHTML = tpl("lifecycleNote", {
+      terminal: "<span class='tag tag-terminal'>" + esc(t("tagTerminalWord")) + "</span>",
+      reversible: "<span class='tag tag-reversible'>" + esc(t("tagReversibleWord")) + "</span>"
+    });
+    document.getElementById("trendTitle").textContent = t("trendTitle");
+    document.getElementById("trendNote").textContent = t("trendNote");
+    document.getElementById("thDate").textContent = t("thDate");
+    document.getElementById("thTrendLeads").textContent = t("thLeadsCol");
+    document.getElementById("thTrendMatriculas").textContent = t("thMatriculasCol");
+    document.getElementById("trendTotalLabel").textContent = t("totalLabel");
+    document.getElementById("originTitle").textContent = t("originTitle");
+    document.getElementById("originNote1").textContent = t("originNote1");
+    document.getElementById("originNote2").innerHTML = tpl("originNote2", { canalcsv: CODE_CANAL_CSV, audit: CODE_AUDIT });
+    document.getElementById("canalHeading").textContent = t("canalHeading");
+    document.getElementById("thCanal").textContent = t("thCanal");
+    document.getElementById("thCanalLeads").textContent = t("thLeadsCol");
+    document.getElementById("canalTotalLabel").textContent = t("totalLabel");
+    document.getElementById("formularioHeading").textContent = t("formularioHeading");
+    document.getElementById("thFormularioOrigen").textContent = t("thFormularioOrigen");
+    document.getElementById("thFormularioCanal").textContent = t("thCanalCol");
+    document.getElementById("thFormularioLeads").textContent = t("thLeadsCol");
+    document.getElementById("originTotalLabel").textContent = t("totalLabel");
+    document.getElementById("programTitle").textContent = t("programTitle");
+    document.getElementById("programNote1").textContent = t("programNote1");
+    document.getElementById("programNote2").innerHTML = tpl("programNote2", { programacsv: CODE_PROGRAMA_CSV });
+    document.getElementById("areaHeading").textContent = t("areaHeading");
+    document.getElementById("thArea").textContent = t("thArea");
+    document.getElementById("thAreaLeads").textContent = t("thLeadsCol");
+    document.getElementById("areaTotalLabel").textContent = t("totalLabel");
+    document.getElementById("programaHeading").textContent = t("programaHeading");
+    document.getElementById("thPrograma").textContent = t("thPrograma");
+    document.getElementById("thProgramaArea").textContent = t("thArea");
+    document.getElementById("thProgramaLeads").textContent = t("thLeadsCol");
+    document.getElementById("programaTotalLabel").textContent = t("totalLabel");
+    document.getElementById("codigoHeading").textContent = t("codigoHeading");
+    document.getElementById("thCodigo").textContent = t("thCodigo");
+    document.getElementById("thCodigoPrograma").textContent = t("thPrograma");
+    document.getElementById("thCodigoLeads").textContent = t("thLeadsCol");
+    document.getElementById("codigoTotalLabel").textContent = t("totalLabel");
+    document.getElementById("footerText").textContent = t("footerText");
+    document.getElementById("badgeIncrement").textContent = t("badgeIncrement");
+    document.getElementById("badgeViews").textContent = t("badgeViews");
+    document.getElementById("langEn").classList.toggle("active", LANG === "en");
+    document.getElementById("langEs").classList.toggle("active", LANG === "es");
+  }
+
+  function setLang(l) {
+    if (l !== "en" && l !== "es") return;
+    LANG = l;
+    try { localStorage.setItem(LANG_KEY, l); } catch (e) { /* localStorage unavailable */ }
+    renderChrome();
+    renderAll();
+  }
+  document.getElementById("langEn").onclick = function () { setLang("en"); };
+  document.getElementById("langEs").onclick = function () { setLang("es"); };
 
   function currentFilters() {
     return {
@@ -490,8 +735,8 @@ const DashboardCore = (function () {
     });
 
     const sumEstados = Object.values(counts).reduce(function (a, b) { return a + b; }, 0);
-    document.getElementById("reconcileNote").textContent =
-      "Sum of status counts (" + sumEstados + ") equals Leads (" + leads + ") for the current filter — reconciled by construction, per DASHBOARD_BUILD_CONTRACT.md.";
+    document.getElementById("reconcileNote").innerHTML =
+      tpl("lifecycleReconcile", { sum: sumEstados, leads: leads, contract: CODE_CONTRACT });
 
     return { leads: leads, mats: mats, conv: conv };
   }
@@ -522,11 +767,11 @@ const DashboardCore = (function () {
     document.getElementById("trendTotalLeads").textContent = sumLeads;
     document.getElementById("trendTotalMatriculas").textContent = sumMats;
 
-    document.getElementById("trendReconcileNote").textContent =
-      "Daily totals reconcile exactly with Lifecycle Status for the current filter: Leads " +
-      lifecycleTotals.leads + " (table sum " + sumLeads + "), Matrículas " +
-      lifecycleTotals.mats + " (table sum " + sumMats + "), Conversion % " +
-      (lifecycleTotals.conv * 100).toFixed(1) + "% = Matrículas ÷ Leads, same formula as Lifecycle Status.";
+    document.getElementById("trendReconcileNote").innerHTML = tpl("trendReconcile", {
+      leads: lifecycleTotals.leads, sumLeads: sumLeads,
+      mats: lifecycleTotals.mats, sumMats: sumMats,
+      conv: (lifecycleTotals.conv * 100).toFixed(1) + "%"
+    });
   }
 
   // Increment 3: same filtered `consultas` as renderLifecycle/renderTrend,
@@ -571,11 +816,10 @@ const DashboardCore = (function () {
     });
     document.getElementById("originTotal").textContent = originSum;
 
-    document.getElementById("originReconcileNote").textContent =
-      "Canal total (" + canalSum + ") and Formulario/Origen total (" + originSum +
-      ") both equal Leads (" + lifecycleTotals.leads + ") for the current filter — reconciled by " +
-      "construction: every origin maps to exactly one documented synthetic Canal (input/canal_mapping.csv), " +
-      "per DASHBOARD_BUILD_CONTRACT.md.";
+    document.getElementById("originReconcileNote").innerHTML = tpl("originReconcile", {
+      canalSum: canalSum, originSum: originSum, leads: lifecycleTotals.leads,
+      canalcsv: CODE_CANAL_CSV, contract: CODE_CONTRACT
+    });
   }
 
   // Increment 4: same filtered `consultas` as every other view, rolled up
@@ -618,11 +862,10 @@ const DashboardCore = (function () {
       return "<td>" + esc(codigo) + "</td><td>" + esc(info ? info.programa : "") + "</td><td class='num'>" + n + "</td>";
     });
 
-    document.getElementById("programReconcileNote").textContent =
-      "Área total (" + areaSum + "), Programa total (" + programaSum + ") and Código total (" + codigoSum +
-      ") all equal Leads (" + lifecycleTotals.leads + ") for the current filter — reconciled by construction: " +
-      "every código maps to exactly one programa, and every programa to exactly one área " +
-      "(input/programa_mapping.csv), per DASHBOARD_BUILD_CONTRACT.md.";
+    document.getElementById("programReconcileNote").innerHTML = tpl("programReconcile", {
+      areaSum: areaSum, programaSum: programaSum, codigoSum: codigoSum, leads: lifecycleTotals.leads,
+      programacsv: CODE_PROGRAMA_CSV, contract: CODE_CONTRACT
+    });
   }
 
   function renderAll() {
@@ -658,6 +901,7 @@ const DashboardCore = (function () {
     renderAll();
   });
 
+  renderChrome();
   renderAll();
 })();
 </script>

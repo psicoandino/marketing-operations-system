@@ -1,11 +1,16 @@
 #!/usr/bin/env node
 /**
- * Smoke test for the Dashboard View — Increment 1 (Lifecycle Status view only).
+ * Smoke test for the Dashboard View — Increment 2 (Lifecycle Status +
+ * Acquisition → Enrollment Trend). Increment 1's checks are preserved
+ * verbatim below except for three nav-count assertions that literally
+ * encoded "only 1 view enabled" — those are updated to "2 enabled" because
+ * enabling the Trend view is this increment's explicit purpose, not a
+ * regression. Every other Increment 1 assertion is unchanged.
  *
  * Verifies, mechanically, against DASHBOARD_BUILD_CONTRACT.md:
  *   - required files exist, no external runtime dependencies, no network calls;
  *   - embedded CSVs match the input/*.csv fixtures exactly;
- *   - the nav scaffolds exactly 4 views, with only 1 enabled this increment;
+ *   - the nav scaffolds exactly 4 views, with exactly 2 enabled this increment;
  *   - the synthetic-data + historical-anomalies disclosure is present;
  *   - Estado de consulta has exactly the 8 contract-specified values;
  *   - status counts reconcile exactly to Leads (no forced/hidden equality);
@@ -15,7 +20,12 @@
  *   - the Canal mapping covers every distinct origin value, unambiguously;
  *   - required interactions (programa_codigo filter, date-range filter) exist;
  *   - the Estado view is not presented as a sequential funnel;
- *   - none of the contract's non-goal entities/capabilities are present.
+ *   - none of the contract's non-goal entities/capabilities are present;
+ *   - [Increment 2] the Trend view's daily totals reconcile exactly with
+ *     Lifecycle Status's Leads/Matrículas, filtered and unfiltered;
+ *   - [Increment 2] no duplicated data model, filter logic, or conversion
+ *     formula was introduced for the new view;
+ *   - [Increment 2] Origin and Program Interest remain unimplemented.
  *
  * Run: node tests/smoke-test.mjs   (no dependencies beyond Node >= 16)
  */
@@ -91,9 +101,12 @@ if (navMatch) {
   check("exactly 4 view buttons", buttons.length === 4, `found ${buttons.length}`);
   const enabled = buttons.filter(([attrs]) => !/disabled/.test(attrs));
   const disabled = buttons.filter(([attrs]) => /disabled/.test(attrs));
-  check("exactly 1 view enabled this increment", enabled.length === 1, `found ${enabled.length}`);
-  check("exactly 3 views disabled (later increments)", disabled.length === 3, `found ${disabled.length}`);
-  check("the enabled view is 'lifecycle'", enabled[0] && enabled[0][2] === "lifecycle");
+  check("exactly 2 views enabled this increment", enabled.length === 2, `found ${enabled.length}`);
+  check("exactly 2 views disabled (later increments)", disabled.length === 2, `found ${disabled.length}`);
+  check("the enabled views are exactly 'lifecycle' and 'trend'",
+    JSON.stringify(enabled.map((b) => b[2]).sort()) === JSON.stringify(["lifecycle", "trend"]));
+  check("disabled views are 'origin' and 'program' (not implemented this increment)",
+    JSON.stringify(disabled.map((b) => b[2]).sort()) === JSON.stringify(["origin", "program"]));
   check("disabled views are labeled as a later increment",
     disabled.every(() => /later increment/.test(navMatch[1])));
 }
@@ -113,6 +126,21 @@ section("required interactions");
 check("programa_codigo filter present", /id="filterPrograma"/.test(html));
 check("date-range start filter present", /<input[^>]*id="filterStart"[^>]*>/.test(html) && /<input[^>]*type="date"[^>]*id="filterStart"/.test(html));
 check("date-range end filter present", /<input[^>]*id="filterEnd"[^>]*>/.test(html) && /<input[^>]*type="date"[^>]*id="filterEnd"/.test(html));
+
+// ---------- [Increment 2] Trend view markup ----------
+section("Trend view markup (Increment 2)");
+check("view-lifecycle section still present (regression check)", /id="view-lifecycle"/.test(html));
+check("view-trend section present", /id="view-trend"/.test(html));
+check("view-trend starts hidden in the static markup", /id="view-trend" hidden/.test(html));
+check("Trend nav button is enabled (no disabled attribute)",
+  /<button data-view="trend">/.test(html));
+check("Origin nav button remains disabled", /<button disabled data-view="origin">/.test(html));
+check("Program Interest nav button remains disabled", /<button disabled data-view="program">/.test(html));
+check("Trend table has Date/Leads/Matrículas columns",
+  /<th>Date<\/th>/.test(html) && />Leads<\/th>/.test(html) && />Matrículas<\/th>/.test(html));
+check("Trend view has a reconciliation note element", /id="trendReconcileNote"/.test(html));
+check("no view-origin or view-program section rendered (not implemented this increment)",
+  !/id="view-origin"/.test(html) && !/id="view-program"/.test(html));
 
 // ---------- funnel non-assertion ----------
 section("funnel non-assertion");
@@ -223,6 +251,46 @@ if (Core) {
   const run2Counts = Core.estadoCounts(Core.parseCsv(consultasCsv));
   check("re-parsing and recomputing produces identical status counts",
     JSON.stringify(counts) === JSON.stringify(run2Counts));
+
+  section("Trend view reconciliation (Increment 2)");
+  const trendAll = Core.dailyTrend(consultas, matriculas);
+  const trendLeadsSum = trendAll.reduce((a, d) => a + d.leads, 0);
+  const trendMatsSum = trendAll.reduce((a, d) => a + d.matriculas, 0);
+  check("daily trend leads sum equals Leads exactly (unfiltered)",
+    trendLeadsSum === leads, `sum=${trendLeadsSum}, leads=${leads}`);
+  check("daily trend matriculas sum equals Matrículas exactly (unfiltered)",
+    trendMatsSum === mats, `sum=${trendMatsSum}, mats=${mats}`);
+  check("conversion computed from trend sums matches Lifecycle Conversion % exactly",
+    Math.abs(conv - trendMatsSum / trendLeadsSum) < 1e-12);
+  check("daily trend rows are sorted by date ascending",
+    trendAll.every((d, i) => i === 0 || trendAll[i - 1].fecha <= d.fecha));
+  check("every daily trend count is non-negative",
+    trendAll.every((d) => d.leads >= 0 && d.matriculas >= 0));
+
+  const filteredMatriculas = Core.filterMatriculas(matriculas, { programaCodigo: oneCode });
+  const trendFiltered = Core.dailyTrend(filteredConsultas, filteredMatriculas);
+  const trendFilteredLeadsSum = trendFiltered.reduce((a, d) => a + d.leads, 0);
+  const trendFilteredMatsSum = trendFiltered.reduce((a, d) => a + d.matriculas, 0);
+  check("daily trend reconciles exactly to Lifecycle totals under a program-code filter too",
+    trendFilteredLeadsSum === filteredConsultas.length &&
+    trendFilteredMatsSum === filteredMatriculas.length);
+
+  section("no duplicated logic introduced (Increment 2 constraint)");
+  const coreSource = html.slice(si, ei);
+  function countOccurrences(src, pattern) {
+    return (src.match(pattern) || []).length;
+  }
+  check("exactly one parseCsv implementation (no duplicated data model)",
+    countOccurrences(coreSource, /function parseCsv\(/g) === 1);
+  check("exactly one filterConsultas implementation (no duplicated filter logic)",
+    countOccurrences(coreSource, /function filterConsultas\(/g) === 1);
+  check("exactly one filterMatriculas implementation (no duplicated filter logic)",
+    countOccurrences(coreSource, /function filterMatriculas\(/g) === 1);
+  check("exactly one conversionRatio implementation (conversion formula stays mathematically consistent)",
+    countOccurrences(coreSource, /function conversionRatio\(/g) === 1);
+  check("exactly one dailyTrend implementation", countOccurrences(coreSource, /function dailyTrend\(/g) === 1);
+  check("only one DashboardCore module defined (no second application/rendering framework)",
+    countOccurrences(html, /const DashboardCore = \(function/g) === 1);
 }
 
 // ---------- summary ----------

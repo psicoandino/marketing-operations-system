@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Case Study — Marketing Data Pipeline &amp; Dashboard Reconstruction</title>
+<style>
+  :root {
+    color-scheme: light dark;
+    --bg: #ffffff;
+    --fg: #1a1a1a;
+    --muted: #555555;
+    --accent: #2451c4;
+    --border: #dddddd;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #14161a;
+      --fg: #e8e8e8;
+      --muted: #a6a6a6;
+      --accent: #7fa4ff;
+      --border: #333640;
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--fg);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    line-height: 1.6;
+  }
+  main {
+    max-width: 720px;
+    margin: 0 auto;
+    padding: 2.5rem 1.5rem 4rem;
+  }
+  nav.crumbs {
+    margin-bottom: 2rem;
+    font-size: 0.9rem;
+  }
+  nav.crumbs a {
+    color: var(--accent);
+    text-decoration: none;
+  }
+  h1 {
+    font-size: 1.6rem;
+    margin: 0 0 1.75rem;
+  }
+  h2 {
+    font-size: 1.05rem;
+    margin: 2rem 0 0.5rem;
+  }
+  p { margin: 0 0 1rem; color: var(--fg); }
+  .ctas {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+    margin: 2rem 0;
+  }
+  @media (max-width: 480px) {
+    .ctas { grid-template-columns: 1fr; }
+  }
+  a.cta {
+    display: block;
+    text-align: center;
+    padding: 1rem;
+    border-radius: 8px;
+    background: var(--accent);
+    color: #fff;
+    text-decoration: none;
+    font-weight: 600;
+  }
+  .disclaimer {
+    border-top: 1px solid var(--border);
+    margin-top: 2rem;
+    padding-top: 1rem;
+    font-size: 0.92rem;
+    color: var(--muted);
+  }
+</style>
+</head>
+<body>
+<main>
+  <nav class="crumbs"><a href="../index.html">&larr; Landing</a></nav>
+
+  <h1>Marketing Data Pipeline &amp; Dashboard — Case Study</h1>
+
+  <h2>What this case is</h2>
+  <p>
+    An operator was responsible for a substantial part of the marketing data pipeline
+    at a real organization, Universidad de Chile, Educación Ejecutiva — consolidating
+    information from more than five heterogeneous operational sources into a single
+    dependable contact base at a scale above 250,000 active contacts and 400,000
+    historical records. This case study reconstructs that work for public
+    demonstration; it is not an export of the original system.
+  </p>
+
+  <h2>The problem</h2>
+  <p>
+    Contact and enrollment data lived scattered across heterogeneous, disconnected
+    operational sources, requiring repeated manual work before any of it was usable
+    for segmentation, campaigns, or reporting.
+  </p>
+
+  <h2>The reconstruction</h2>
+  <p>
+    The reconstruction is split into two linked, self-contained demonstrations, each
+    addressing one stage of the same story and each disclosing its own synthetic
+    data: a <strong>Pipeline View</strong>, covering data consolidation, and a
+    <strong>Dashboard View</strong>, covering operational visibility into the
+    prospect lifecycle.
+  </p>
+
+  <h2>What to look at first</h2>
+  <p>
+    Open the Pipeline View to see heterogeneous sources cleaned, normalized, and
+    consolidated into one contact base. Open the Dashboard View to see how that
+    consolidated base supports visibility into where prospects stand, from
+    acquisition through enrollment.
+  </p>
+
+  <div class="ctas">
+    <a class="cta" href="../pipeline/index.html">Pipeline View</a>
+    <a class="cta" href="../dashboard/index.html">Dashboard View</a>
+  </div>
+
+  <h2>What this is not</h2>
+  <p class="disclaimer">
+    This is not the original organizational system, and no production data is
+    exported or displayed. Both linked demonstrations run entirely on synthetic
+    data. Nothing here claims a specific measured business outcome, real-time
+    reporting, or permanent production use of any experimental model.
+  </p>
+</main>
+</body>
+</html>
